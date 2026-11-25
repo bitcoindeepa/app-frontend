@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "cn";
 import { Hero } from "@/components/ui/hero";
 import { ValueSkeleton } from "@/components/ui/value-skeleton";
@@ -52,6 +53,7 @@ export function TotalValueCard({
   const fiat = (lkr: number) => (isUsd ? fmtUsd(lkr * usdRate) : `${LKR_SYMBOL} ${fmtLkr(lkr)}`);
   const isProfit = changePercent >= 0;
   const satsText = `${fmtSats(totalSats)} sats`;
+  const router = useRouter();
 
   return (
     <Hero priority>
@@ -192,6 +194,19 @@ export function TotalValueCard({
           )}
         </>
       )}
+
+      {/* Bottom right, level with the 24h pill */}
+      <button
+        type="button"
+        onClick={() => {
+          haptic.impact("light");
+          router.push("/dashboard/calculator");
+        }}
+        aria-label="Open calculator"
+        className="press hit bg-onbrand-tile text-onbrand-tile-ink absolute right-3 bottom-4 flex size-7 items-center justify-center rounded-lg border-0"
+      >
+        <CalculatorIcon />
+      </button>
     </Hero>
   );
 }
@@ -222,6 +237,24 @@ function LockIcon() {
     >
       <rect x="4" y="11" width="16" height="10" rx="2" />
       <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </svg>
+  );
+}
+
+function CalculatorIcon() {
+  return (
+    <svg
+      className="size-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <rect x="5" y="3" width="14" height="18" rx="2.5" />
+      <path d="M8.5 7.5h7M9 12h.01M12 12h.01M15 12h.01M9 15.5h.01M12 15.5h.01M15 15.5h.01M9 18h.01M12 18h.01M15 18h.01" />
     </svg>
   );
 }

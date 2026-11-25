@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { fmtLkrCurrency } from "@/lib/formatters";
 
 /**
  * A Sri Lankan mobile number as people type it ("077 123 4567", "0771234567",
@@ -113,8 +114,8 @@ export const buyAmountSchema = (minLkr = 100, maxLkr = Number.POSITIVE_INFINITY)
   z
     .number({ message: "Enter an amount in LKR" })
     .int("Use whole rupees")
-    .min(minLkr, `Minimum is ${minLkr.toLocaleString("en-US")} LKR`)
-    .max(maxLkr, `Maximum per buy is ${maxLkr.toLocaleString("en-US")} LKR`);
+    .min(minLkr, `Minimum is ${fmtLkrCurrency(minLkr)}`)
+    .max(maxLkr, `Maximum per buy is ${fmtLkrCurrency(maxLkr)}`);
 
 /** P2P send amount; limits come from GET /p2p/me (the bot's). */
 export const sendAmountSchema = (

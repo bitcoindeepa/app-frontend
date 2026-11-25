@@ -13,7 +13,7 @@ import {
   PriceFooter,
   useDualAmount,
 } from "@/components/dashboard/trade/DualAmount";
-import { ErrorRow, HoldButton, InfoRow, ReviewHeader } from "@/components/dashboard/trade/parts";
+import { ErrorRow, InfoRow, ReviewHeader } from "@/components/dashboard/trade/parts";
 import { ReloginPrompt } from "@/components/auth/ReloginPrompt";
 import { isTransferInProgress, SendTransferStatus } from "./SendTransferStatus";
 import { useP2pMe, useP2pSend, useP2pTransfer, useRecipient } from "@/hooks/query/useP2p";
@@ -97,7 +97,7 @@ export default function SendSheet({
   const d = useDualAmount({
     initial: "sats",
     toSats: (lkr) => (rate > 0 ? Math.floor((lkr / rate) * 1e8) : 0),
-    toLkr: (s) => Math.floor(lkrFor(s)),
+    toLkr: lkrFor,
   });
   const sats = d.sats;
   const parsed =
@@ -406,7 +406,7 @@ export default function SendSheet({
         <ReviewHeader
           caption="You send"
           big={`${fmtSats(sats)} sats`}
-          small={rate > 0 ? `≈ ${fmtLkrCurrency(Math.round(lkrFor(sats)))}` : undefined}
+          small={rate > 0 ? `≈ ${fmtLkrCurrency(lkrFor(sats))}` : undefined}
         />
         {needsConfirm && (
           <InfoRow>You&apos;ll confirm this payment in the Bitcoin Deepa bot chat.</InfoRow>
@@ -417,9 +417,7 @@ export default function SendSheet({
           rows={[
             { k: "To", v: recipientLabel(recipient) },
             { k: "Amount", v: `${fmtSats(sats)} sats` },
-            ...(rate > 0
-              ? [{ k: "Value", v: `≈ ${fmtLkrCurrency(Math.round(lkrFor(sats)))}` }]
-              : []),
+            ...(rate > 0 ? [{ k: "Value", v: `≈ ${fmtLkrCurrency(lkrFor(sats))}` }] : []),
             ...(limits
               ? [
                   {
@@ -447,14 +445,11 @@ export default function SendSheet({
     );
     footer = (
       <>
-        <HoldButton
-          label={`Send ${fmtSats(sats)} sats`}
-          disabled={!!memoError}
-          loading={send.isPending}
-          onConfirm={() => void onSend()}
-        />
+        <Button disabled={!!memoError} loading={send.isPending} onClick={() => void onSend()}>
+          Send {fmtSats(sats)} sats
+        </Button>
         <p className="text-ink3 mt-2 text-center text-[12px] font-semibold">
-          Press and hold to send. This can&apos;t be undone.
+          This can&apos;t be undone.
         </p>
       </>
     );

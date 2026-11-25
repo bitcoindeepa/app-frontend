@@ -427,6 +427,17 @@ html[data-theme="dark"] {
 }
 
 /* Display numbers: Ubuntu with tabular figures. */
+/* Text straight on a photo hero (white on light orange): a soft dark shadow
+   keeps it readable; icons in it get the same through drop-shadow */
+@utility hero-text {
+  text-shadow:
+    0 1px 2px rgb(0 0 0 / 0.3),
+    0 0 10px rgb(0 0 0 / 0.15);
+  & svg {
+    filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.3));
+  }
+}
+
 @utility num {
   font-family: var(--font-display);
   font-variant-numeric: tabular-nums;

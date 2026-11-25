@@ -9,6 +9,7 @@ import { usePlatform } from "@/platform";
 import {
   clearLaunchLock,
   getAppLockSnapshot,
+  getJustLoggedInSnapshot,
   getPasskeyRequiredSnapshot,
   getServerAppLockSnapshot,
   getUnlockNeededSnapshot,
@@ -27,7 +28,8 @@ import {
  * RELOCK_AFTER_MS in the background, or a 403 passkey_required) or the
  * backend says this session hasn't unlocked. With the prompt on open off:
  * only after a 403 passkey_required (sends and sale payments ask for their
- * own approval, so they never need the lock screen).
+ * own approval, so they never need the lock screen). Right after a login the
+ * app behaves as with it off until it relocks (lib/app-lock.ts).
  */
 export function useAppLock(): boolean {
   const { status } = useSession();
@@ -42,6 +44,7 @@ export function useAppLock(): boolean {
   // flash before the lock screen (localStorage; false on the server).
   const hint = useSyncExternalStore(subscribeAppLock, readPasskeyHint, () => false);
   const unlockNeeded = useSyncExternalStore(subscribeAppLock, getUnlockNeededSnapshot, () => false);
+  const justLoggedIn = useSyncExternalStore(subscribeAppLock, getJustLoggedInSnapshot, () => false);
   const lockOnOpen = data ? locksOnOpen(data) : hint;
   useEffect(() => {
     if (!data) return;
@@ -84,7 +87,7 @@ export function useAppLock(): boolean {
   }, [enabled, lockOnOpen]);
 
   if (status !== "authenticated" || !enabled) return false;
-  if (!lockOnOpen) return unlockNeeded;
+  if (!lockOnOpen || justLoggedIn) return unlockNeeded;
   // Before GET /passkey answers, the local state decides: locked on launch,
   // and not locked right after an unlock here (e.g. signing in with a
   // passkey), which would otherwise flash the lock and prompt again

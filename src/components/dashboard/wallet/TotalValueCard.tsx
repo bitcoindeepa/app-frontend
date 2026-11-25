@@ -59,7 +59,7 @@ export function TotalValueCard({
   return (
     <Hero priority>
       <div className="flex items-center justify-between">
-        <p className="text-[14px] leading-[14px] font-medium">Total value</p>
+        <p className="hero-text text-[14px] leading-[14px] font-medium">Total value</p>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -113,8 +113,8 @@ export function TotalValueCard({
         </>
       ) : !balanceAvailable ? (
         <div className="flex flex-col gap-1 py-1">
-          <p className="num text-[22px] leading-8 font-bold">Balance unavailable</p>
-          <p className="text-[12px] leading-4 text-white/80">
+          <p className="num hero-text text-[22px] leading-8 font-bold">Balance unavailable</p>
+          <p className="hero-text text-[12px] leading-4 text-white/90">
             Couldn&apos;t reach your wallet. Try again in a few minutes.
           </p>
         </div>
@@ -134,7 +134,7 @@ export function TotalValueCard({
               key={flipKey}
               // Fixed height: sats, LKR, USD and the masked text all sit on the same 48px line,
               // so the card doesn't grow or shrink when the unit flips.
-              className="num flex h-12 animate-[flip_.45s_cubic-bezier(.2,.9,.3,1.2)] items-center overflow-visible text-[36px] leading-12 font-bold tracking-[-0.015em]"
+              className="num hero-text flex h-12 animate-[flip_.45s_cubic-bezier(.2,.9,.3,1.2)] items-center overflow-visible text-[36px] leading-12 font-bold tracking-[-0.015em]"
             >
               {visible ? (
                 // One ticker for sats, LKR and USD: every switch rolls the digits.
@@ -148,14 +148,14 @@ export function TotalValueCard({
               )}
             </span>
           </button>
-          <p className="num flex items-center gap-2 text-[12px] leading-4 uppercase">
+          <p className="num hero-text flex items-center gap-2 text-[12px] leading-4 uppercase">
             {mask(`${fmtBtc(totalSats)} BTC`)}
             <span aria-hidden className="size-[2.2px] rounded-full bg-current" />
             {mask(primary === "sats" ? `≈ ${fiat(totalLkr)}` : satsText)}
           </p>
           {potSats > 0 && (
             // Included in the total above; locked until withdrawn from the pot in the bot
-            <p className="num flex items-center gap-1.5 text-[12px] leading-4 text-white/80">
+            <p className="num hero-text flex items-center gap-1.5 text-[12px] leading-4 text-white/90">
               <LockIcon />
               {mask(`${fmtSats(potSats)} sats`)} in savings pots
               <span aria-hidden className="size-[2.2px] rounded-full bg-current" />
@@ -212,11 +212,15 @@ export function TotalValueCard({
   );
 }
 
-/** Ticker props for a fiat amount. Under $100 it ticks in cents to keep them. */
+/** Ticker props for a fiat amount. Rupees tick in cents (always two decimals); dollars under $100 too. */
 // The ticker lays its parts out as flex items, which drops plain edge spaces: use NBSPs.
 function fiatTicker(lkr: number, usdRate: number | undefined) {
   if (usdRate === undefined) {
-    return { value: lkr, prefix: `≈ ${LKR_SYMBOL}\u00a0`, format: fmtLkr };
+    return {
+      value: lkr * 100,
+      prefix: `≈ ${LKR_SYMBOL}\u00a0`,
+      format: (c: number) => fmtLkr(c / 100),
+    };
   }
   const usd = lkr * usdRate;
   return usd < 100

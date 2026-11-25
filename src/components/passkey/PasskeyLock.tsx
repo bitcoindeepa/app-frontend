@@ -12,7 +12,7 @@ import { passkeyCancelled, passkeyErrorMessage } from "@/lib/passkey";
 import { haptic, usePlatform } from "@/platform";
 
 /**
- * Full-screen cover over the web app (AppLockGate / useAppLock decide when). It
+ * Full-screen cover over the web app (AppLockBoundary / useAppLock decide when). It
  * opens the browser's passkey prompt at once, and again whenever the app
  * comes back into focus; meanwhile only the logo shows. The locked screen
  * (unlock button, help, log out) appears only when that prompt is cancelled
@@ -40,16 +40,24 @@ export function PasskeyLock() {
     const root = rootRef.current;
     if (!root) return;
     const madeInert: HTMLElement[] = [];
-    for (const el of Array.from(document.body.children)) {
-      if (el === root || !(el instanceof HTMLElement) || el.inert) continue;
+    const disable = (el: Element) => {
+      if (el === root || !(el instanceof HTMLElement) || el.inert) return;
       el.inert = true;
       madeInert.push(el);
-    }
+    };
+    Array.from(document.body.children).forEach(disable);
+    // Not just once: anything added to <body> while locked (a sheet or dialog
+    // portal, a page mounted by Back/Forward) is made inert as it appears
+    const observer = new MutationObserver((records) => {
+      for (const record of records) record.addedNodes.forEach((node) => disable(node as Element));
+    });
+    observer.observe(document.body, { childList: true });
     // Remember what had focus, to give it back after unlocking
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     previous?.blur();
     root.focus({ preventScroll: true });
     return () => {
+      observer.disconnect();
       madeInert.forEach((el) => (el.inert = false));
       // Back where the member was, if that control is still there and usable;
       // otherwise focus stays on the page (the browser's default)

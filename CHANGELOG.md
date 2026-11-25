@@ -14,7 +14,9 @@ its notes. Keep unreleased work under `## [Unreleased]
 - A cancelled or failed "Log In with Telegram" no longer opens the app without the passkey lock. The lock is skipped
   after a login only when the backend had confirmed the browser was signed out.
 - The passkey lock covers every signed-in page, including `/verification` (KYC details), `/plans` and `/payment`,
-  not only the dashboard.
+  not only the dashboard. Pages opened with Back/Forward and sheets or dialogs that appear while it's locked can't be
+  used behind it.
+- Turning off "Ask when opening the app" always asks for the passkey, even when the session is already unlocked.
 - Signing out, an expired session or signing in as another account in the same tab (passkey sign-in) clears all
   cached account data first, so one account's details never show to the next.
 

@@ -13,7 +13,7 @@ import { useBotWalletInit } from "@/hooks/useBotWalletInit";
 import { useToast } from "@/components/ui/toast";
 import { TELEGRAM_BOT_URL } from "@/lib/constants";
 import { onIdentityChange } from "@/lib/auth";
-import { AppLockGate } from "@/components/passkey/AppLockGate";
+import { AppLockBoundary } from "@/components/passkey/AppLockBoundary";
 import ThemeProvider from "./theme";
 
 // Registers/refreshes the Telegram user on launch (and after the session
@@ -102,11 +102,12 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           <ToastProvider>
             <BotWalletOnLaunch />
             <OfflineBanner />
-            {children}
-            {/* Above every route, not only /dashboard: verification and
-                payment pages show the member's data too */}
-            <AppLockGate />
-            <ConfirmHost />
+            {/* Every route, not only /dashboard: verification and payment
+                pages show the member's data too */}
+            <AppLockBoundary>
+              {children}
+              <ConfirmHost />
+            </AppLockBoundary>
           </ToastProvider>
         </QueryClientProvider>
       </ThemeProvider>

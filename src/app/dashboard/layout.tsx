@@ -80,7 +80,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     // Phone-width column, centered on a plain page on wider screens.
     <SheetsProvider>
-      {/* The passkey lock (AppLockGate) is mounted in the root providers */}
+      {/* The passkey lock (AppLockBoundary) wraps every route in the root providers */}
       <div className="bg-background min-h-app relative mx-auto flex w-full max-w-[440px] flex-col overflow-x-clip px-4 transition-colors duration-300">
         <AppHeader />
         <main

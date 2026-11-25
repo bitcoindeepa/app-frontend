@@ -78,6 +78,12 @@ through PayHere in LKR. Everything else (accounts, plans, wallet, KYC) lives in
   (`/dashboard/profile`): avatar, username, personal details, payout bank account, light or dark theme, and
   log out of all devices.
 
+## User guide
+
+The member guide (opening the app, verifying, plans, buying, selling, sending and the rest) lives in
+[docs/user-guide](docs/user-guide/README.md). It is laid out for GitBook Git Sync: `.gitbook.yaml` points GitBook at
+that folder.
+
 ## Run it
 
 You need [Bun](https://bun.sh) 1.4 or newer (CI uses 1.4.4) and a running

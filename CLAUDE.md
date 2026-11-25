@@ -4,7 +4,9 @@ Telegram Mini App + web/PWA (Next.js 16 App Router) for Sri Lankan Bitcoin DCA: 
 
 ## Commands
 
-bun (`bun.lockb` committed). `bun dev` / `bun start` (port 3347), `bun run build`, `bun run lint`, `bun run format`, `bun run init-git-hooks` (pre-commit runs `prettier --check`). No test suite: run `format` and `build` before committing.
+bun (`bun.lockb` committed). `bun dev` / `bun start` (port 3347), `bun run build`, `bun run lint`, `bun run format`, `bun run test` (Vitest; `bun run test:watch` while writing, `bun run test:coverage` for the coverage summary), `bun run init-git-hooks` (pre-commit runs `prettier --check`). Run `format`, `test` and `build` before committing.
+
+Tests sit next to the code as `*.test.ts` and run in Node in the `Asia/Colombo` time zone (`vitest.config.ts`). Import `describe`/`it`/`expect` from `vitest` (no globals). Logic in `src/lib` is covered first; there is no DOM environment yet, so hooks and components aren't tested. CI runs them in `.github/workflows/tests.yml`; on `main` it also writes the line coverage (of all of `src`, untested files included) to `coverage.json` on the `badges` branch, which the README badge reads.
 
 ## API
 
@@ -35,7 +37,7 @@ bun (`bun.lockb` committed). `bun dev` / `bun start` (port 3347), `bun run build
 ## Telegram / PWA gotchas
 
 - Mobile-first, `max-w-md` single column.
-- Rupees: every displayed LKR value has two decimals (`fmtLkr` / `fmtLkrCurrency` / `fmtLkrExact` in `src/lib/formatters.ts`); don't `Math.round` before formatting. Only typed amount inputs stay whole, and compact chart/price labels (`fmtLkrCurrencyCompact`, `29.5M`) stay abbreviated.
+- Rupees: every displayed LKR value has two decimals (`fmtLkr` / `fmtLkrCurrency` / `fmtLkrExact` in `src/lib/formatters.ts`); don't `Math.round` before formatting. Only typed amount inputs and whole-rupee preset chips (`fmtLkrPreset`, calculator and Buy) stay whole, and compact chart/price labels (`fmtLkrCurrencyCompact`, `29.5M`) stay abbreviated.
 - Send confirms with a normal button (no press-and-hold); Sell still uses `HoldButton`.
 - Fast launch (`src/lib/launch-redirect.ts`): a `<head>` script sends returning members straight to `/dashboard`; `web_app_ready` is sent from the end of `<body>`.
 - `next.config.mjs` forces `Cache-Control: no-store` on non-static routes (Telegram Desktop caches stale HTML): don't remove. `allowedDevOrigins` allows `*.sats.day` / `*.ngrok-free.app` tunnels.

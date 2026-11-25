@@ -38,7 +38,8 @@ Remaining:
 - [ ] iOS splash images (`apple-touch-startup-image`), or accept the plain launch screen
 - [ ] "Link copied" feedback when `platform.share()` falls back to the clipboard (when the referral card launches)
 - [ ] Issue/PR templates and `good first issue` labels before the event
-- [ ] Vitest with a few tests (`fetchy` 401 handling, platform layer)
+- [x] Vitest, with tests for the logic in `src/lib` (amounts, fees, formatting, validation, activity)
+- [ ] Tests for `fetchy` (401 handling), `auth`, `app-lock` and the platform layer, then hooks and components (jsdom + Testing Library + MSW)
 - [ ] Dev mock login: needs a dev-only backend endpoint, decide later
 - [ ] Later: httpOnly cookie session instead of the localStorage token (backend change)
 - [ ] Investigate: the bottom nav prefetches each dashboard route 2–5 times (different `_rsc` keys) within a couple of seconds of loading

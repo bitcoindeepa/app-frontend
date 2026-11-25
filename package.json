@@ -14,6 +14,9 @@
     "stamp-sw": "node scripts/stamp-sw.mjs",
     "start": "next start -p 3347",
     "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "format": "prettier --write .",
     "init-git-hooks": "git config core.hooksPath .githooks"
   },
@@ -46,12 +49,14 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/sanitize-html": "^2.16.1",
+    "@vitest/coverage-v8": "^5.1.2",
     "eslint": "9.39.4",
     "eslint-config-next": "^16.2.9",
     "postcss": "^8.4.41",
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "tailwindcss": "^4.3.5",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^5.1.2"
   }
 }

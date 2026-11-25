@@ -52,3 +52,31 @@ export const telegramPlatform = (over: Partial<Platform> = {}): Platform => ({
 
 /** Before detection has finished: neither web nor Telegram yet */
 export const pendingPlatform = (): Platform => fakePlatform(null, null);
+
+/**
+ * For screens, which also use the haptics and the back button: a whole
+ * stand-in for the "@/platform" module, around one platform that tests set.
+ *
+ *   vi.mock("@/platform", async () => (await import("@/test/platform")).platformModule());
+ *   beforeEach(() => setPlatform(webPlatform()));
+ */
+const active = { platform: null as Platform | null };
+
+/** The platform the screen under test runs on. Returns it, to assert on its spies. */
+export function setPlatform(platform: Platform): Platform {
+  active.platform = platform;
+  return platform;
+}
+
+export function platformModule() {
+  return {
+    usePlatform: () => {
+      if (!active.platform) throw new Error("Call setPlatform(...) before rendering");
+      return active.platform;
+    },
+    haptic: { impact: vi.fn(), notify: vi.fn(), select: vi.fn() },
+    useBackButton: vi.fn(),
+    HapticsLayer: () => null,
+    PlatformProvider: ({ children }: { children: unknown }) => children,
+  };
+}

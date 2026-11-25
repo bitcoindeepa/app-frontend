@@ -1,6 +1,8 @@
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, cleanup, renderHook, type RenderHookOptions } from "@testing-library/react";
+import { act, cleanup, render, renderHook, type RenderHookOptions } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { ToastProvider } from "@/components/ui/toast";
 import { afterEach } from "vitest";
 
 // Testing Library only unmounts by itself when the test globals are on; they're off here
@@ -26,6 +28,21 @@ export function renderHookWithClient<Result, Props>(
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
   return { queryClient, ...renderHook(hook, { wrapper, ...rest }) };
+}
+
+/**
+ * Renders a screen the way the app does: inside the query client and the
+ * toast provider. `user` taps and types like a person would.
+ */
+export function renderScreen(ui: ReactElement, options: { queryClient?: QueryClient } = {}) {
+  const { queryClient = createTestQueryClient() } = options;
+  const user = userEvent.setup();
+  const view = render(
+    <QueryClientProvider client={queryClient}>
+      <ToastProvider>{ui}</ToastProvider>
+    </QueryClientProvider>
+  );
+  return { user, queryClient, ...view };
 }
 
 /** Runs something that is expected to fail (inside act) and returns what it threw */

@@ -14,29 +14,27 @@ You are signed in automatically with your Telegram account. There is no separate
 
 ### The welcome screen
 
-The first time you open the app you see a welcome screen with a counter of how many people have joined, and these options:
+The first time you open the app you see **Join Sri Lanka's Fastest Growing Bitcoin Community**, with a counter of how many people have joined.
 
-| Option                  | What it does                                                            |
-| ----------------------- | ----------------------------------------------------------------------- |
-| **Start Using Wallet**  | Opens your [wallet](../usage/wallet.md).                                |
-| **Subscribe to a Plan** | Opens the plans screen. See [Choose a plan](../setup/choose-a-plan.md). |
-| **Send a Gift**         | Marked **Coming Soon**. Gifting is not available yet.                   |
-| **Join Our Community**  | Opens Bitcoin Deepa on Telegram.                                        |
+| Option                 | What it does                             |
+| ---------------------- | ---------------------------------------- |
+| **Join the community** | Opens your [wallet](../usage/wallet.md). |
+| **Already a member?**  | Also opens your wallet.                  |
 
-Once you have used the app, it skips this screen and opens straight to your wallet.
+Once you have used the app, it skips this screen and opens straight to your wallet. If it does show it again, it says **Welcome back! You're already a member**, with **Open my wallet** and **Manage my plans**.
 
 ## In a web browser
 
-1. Open the Bitcoin Deepa web app.
-2. Tap **Sign In with Telegram** and approve the sign-in in the Telegram window that appears.
+1. Go to [app.bitcoindeepa.com](https://app.bitcoindeepa.com).
+2. Tap **Sign in with Telegram** and approve the sign-in in the Telegram window that appears.
 3. You land on your wallet.
 
-If you would rather use Telegram, tap **Open in Telegram Instead** on the sign-in screen.
+The sign-in screen has a few more options:
 
-In a browser you also get two extra controls that Telegram does not need:
-
-- An **Install app** icon at the top of the wallet. See [Install it on your phone](install-on-your-phone.md).
-- **Log out**, at the bottom of your [profile](../usage/profile.md).
+- **Sign in with passkey**: for members who have [added a passkey](../setup/passkey.md). Shown only in browsers that support passkeys.
+- **Prefer Telegram?**: opens the Mini App in the Telegram app instead.
+- **Install the app**: adds Bitcoin Deepa to your home screen. See [Install it on your phone](install-on-your-phone.md).
+- The sun or moon icon at the top right switches between light and dark mode.
 
 {% hint style="info" %}
 Use the same Telegram account everywhere. Your wallet, plan and verification belong to that account, so signing in with a different one shows a different, empty wallet.
@@ -44,20 +42,21 @@ Use the same Telegram account everywhere. Your wallet, plan and verification bel
 
 ## Getting around
 
-A bar at the bottom of the screen switches between the five main tabs:
+A bar at the bottom of the screen switches between the four main tabs:
 
-| Tab          | What you find there                                   |
-| ------------ | ----------------------------------------------------- |
-| **Wallet**   | Your balance, plan summary, performance and chart.    |
-| **Activity** | Every plan payment, one-time buy and transfer.        |
-| **Plans**    | Your current plan, and where you change or cancel it. |
-| **Tasks**    | Small actions such as joining the community.          |
-| **News**     | Bitcoin news articles.                                |
+| Tab          | What you find there                                                   |
+| ------------ | --------------------------------------------------------------------- |
+| **Wallet**   | Your balance, Buy, Sell and Send, your plan, performance and a chart. |
+| **Activity** | Every plan payment, one-time buy, sale and transfer.                  |
+| **Plans**    | Your current plan, or the plan picker if you don't have one.          |
+| **News**     | Bitcoin news articles.                                                |
+
+At the top of every tab is your name, your @username and your picture. Tap the picture to open [Profile & settings](../usage/profile.md). A green tick on the picture means your identity is verified.
 
 Two more things work on every tab:
 
 - **Pull down** from the top of the screen to refresh.
-- **Tap the eye icon** to hide or show your amounts. The app remembers your choice.
+- **Tap the eye icon** to hide or show your amounts. The app remembers your choice. You can also turn on **Hide balances** in Profile & settings.
 
 ## Next step
 

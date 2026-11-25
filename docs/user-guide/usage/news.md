@@ -1,16 +1,16 @@
 # News
 
-The **News** tab brings you recent bitcoin news, so you can keep up without leaving the app.
+The **News** tab brings you recent bitcoin news from Bitcoin Magazine, so you can keep up without leaving the app.
 
 ## Read an article
 
 - The newest article is shown at the top with a **Featured** label.
-- The rest are listed underneath. Each one shows its category and an estimated reading time.
-- Tap an article to read it in the app. **Related Articles** from the same category are listed at the end.
+- The rest are listed underneath. Each one shows its category, its date and an estimated reading time.
+- Tap an article to read it in the app. **Related articles** are listed at the end.
 
 ## Filter by category
 
-Use the tabs above the list to show **All** articles or only one of the most common categories.
+Use the tabs above the list to show **All** articles or only one of the three most common categories.
 
 ## Good to know
 

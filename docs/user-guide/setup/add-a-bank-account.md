@@ -12,28 +12,32 @@ Have a recent **bank statement or passbook page** that shows both your name and 
 
 ## Steps
 
-1. On the **Wallet** tab, tap your name or picture at the top left to open your profile.
-2. Under **Bank account**, tap **Add bank account**.
-3. Tap **Choose your bank**, search for your bank, and select it.
-4. Enter your **Account number**. It must be 6 to 20 digits.
-5. Enter the **Account holder name**, exactly as the bank has it.
-6. Tap **Upload statement** and choose your file.
-7. Tap **Submit for review**.
+1. Open the **Add bank account** sheet. Any of these takes you there:
+   - **Add a bank account** on the **Get started** card on your wallet.
+   - **Add bank account** under **Payout account** in [Profile & settings](../usage/profile.md).
+   - **Add bank** on the notice in the Sell screen.
+2. Tap **Choose your bank**, search for your bank, and select it.
+3. Enter your **Account number**. It must be 6 to 20 digits. Spaces and dashes are ignored.
+4. Enter the **Account holder name**, exactly as the bank has it.
+5. Under **Bank statement**, tap **Upload statement** and choose your file. Tap **Change** to pick a different one.
+6. Tap **Submit for review**.
 
 <!-- screenshot: the "Add bank account" sheet, filled in -->
 
-You see **Bank account submitted**. The statement is checked against your identity, which usually takes a few hours.
+You see **Bank account submitted**. The statement is checked against your ID, which usually takes a few hours.
 
 ## Account status
 
-| Status        | What it means                                            | What to do                                 |
-| ------------- | -------------------------------------------------------- | ------------------------------------------ |
-| **In review** | Your statement is being checked.                         | Wait. You can sell once it is verified.    |
-| **Verified**  | Money from selling sats is sent to this account.         | Nothing. You are ready to sell.            |
-| **Rejected**  | The account could not be verified against your identity. | Tap **Add another account** and try again. |
+Your account is shown under **Payout account** in Profile & settings, with a status badge:
+
+| Status        | What it means                                            | What to do                                              |
+| ------------- | -------------------------------------------------------- | ------------------------------------------------------- |
+| **In review** | Your statement is being checked.                         | Wait. You can sell once it is verified.                 |
+| **Verified**  | Rupees from selling sats are sent to this account.       | Nothing. You are ready to sell.                         |
+| **Rejected**  | The account could not be verified against your identity. | Tap **Add another account** and upload a new statement. |
 
 ## Change or remove your account
 
-Open your profile and tap **Remove account** under **Bank account**, then confirm. You can add an account again afterwards, and it goes through review again.
+In Profile & settings, tap the bin icon next to your account under **Payout account**, then confirm with **Remove** (or **Keep it** to back out). That account stops getting payouts. To sell again, add an account and wait for it to be verified.
 
 You cannot remove an account while a sale to it is still in progress. Wait for the sale to finish, then try again.

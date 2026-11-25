@@ -157,6 +157,12 @@ export interface DCSummary {
   total_lkr: string;
   /** False when the backend couldn't reach the BitcoinDeepa wallet: total_* are 0, not real. Missing on older backends. */
   balance_available?: boolean;
+  /** Sats the member can sell or send: total_balance minus savings pots. Missing on older backends (then all of total_balance). */
+  spendable_balance?: number;
+  /** Sats locked in the member's savings pots in the bot (part of total_balance, can't be moved until withdrawn there). */
+  pot_balance?: number;
+  /** Each savings pot, oldest first. */
+  pots?: { name: string; balance: number }[];
   currency: string;
   "24_hr_change": number;
   current_btc_price?: {

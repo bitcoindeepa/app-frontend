@@ -21,6 +21,7 @@ import {
   type SellOrder,
 } from "@/hooks/query/useSell";
 import { useWalletMetrics } from "@/hooks/query/useWalletMetrics";
+import { useP2pMe } from "@/hooks/query/useP2p";
 import { FetchyError } from "@/lib/fetchy";
 import { fmtLkrCurrency, fmtLkrExact, fmtSats } from "@/lib/formatters";
 import { estimateSellLkr, satsForLkr } from "@/lib/sell";
@@ -38,6 +39,7 @@ import {
 import { ErrorRow, HoldButton, LockRow, ReviewHeader } from "./parts";
 import { fmtFeePercent } from "./useBuyFlow";
 import { verifyCopy } from "./verify-copy";
+import { MovableHint } from "./MovableBalance";
 
 function useSecondsLeft(expiresAt: string | undefined) {
   const [now, setNow] = useState(() => Date.now());
@@ -67,7 +69,18 @@ export function useSellFlow({ kyc, close, open }: FlowArgs): FlowView {
   const [forceExpired, setForceExpired] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
 
-  const { totalSats, balanceAvailable, isLoading: balanceLoading } = useWalletMetrics();
+  // Sats in savings pots can't be collected, so sell up to the spendable
+  // balance. /p2p/me is live (the bot's spendable balance and pots, from one
+  // read); the wallet summary is cached up to ~10 min, so a pot withdrawal
+  // wouldn't show. Fall back to the summary when /p2p/me isn't available (P2P
+  // off, an old login): its numbers are older but agree with each other.
+  const me = useP2pMe(open);
+  const summary = useWalletMetrics();
+  const live = me.data;
+  const spendableSats = live ? live.balance : summary.spendableSats;
+  const potSats = live ? (live.pot_balance ?? 0) : summary.potSats;
+  const balanceAvailable = live ? true : summary.balanceAvailable;
+  const balanceLoading = me.isLoading || (!live && summary.isLoading);
   const { data: price } = useSellPrice(open);
   const { current: bankAccount, verified, isLoading: bankLoading } = useBankAccounts();
   const quoteM = useSellQuote();
@@ -91,11 +104,11 @@ export function useSellFlow({ kyc, close, open }: FlowArgs): FlowView {
   // The balance may still be loading: don't judge the amount against 0
   const parsed =
     d.hasValue && !balanceLoading
-      ? sellAmountSchema(totalSats, price?.minSats, price?.maxSats).safeParse(sats)
+      ? sellAmountSchema(spendableSats, price?.minSats, price?.maxSats, potSats).safeParse(sats)
       : null;
   const error = parsed && !parsed.success ? parsed.error.issues[0]?.message : undefined;
   const amountOk = !!parsed?.success && balanceAvailable;
-  const maxSats = Math.min(totalSats, price?.maxSats ?? totalSats);
+  const maxSats = Math.min(spendableSats, price?.maxSats ?? spendableSats);
 
   const ready = kyc.approved && !!verified;
   // The review needs a quote, KYC and a verified bank (any can change while it's open).
@@ -196,11 +209,11 @@ export function useSellFlow({ kyc, close, open }: FlowArgs): FlowView {
   let footer: React.ReactNode;
 
   if (current === "amount") {
-    let hint: string;
+    let hint: React.ReactNode;
     if (error) hint = error;
     else if (balanceLoading) hint = "Checking your balance…";
     else if (!balanceAvailable) hint = "Your balance couldn't be loaded right now";
-    else hint = `You have ${fmtSats(totalSats)} sats`;
+    else hint = <MovableHint movableSats={spendableSats} />;
 
     const kycGate = !kyc.loading && !kyc.approved ? verifyCopy(kyc.status) : null;
     const bankGate = !kycGate && !bankLoading && !verified ? bankRequiredCopy(bankAccount) : null;
@@ -254,9 +267,9 @@ export function useSellFlow({ kyc, close, open }: FlowArgs): FlowView {
         <DualHint invalid={!!error || (!balanceLoading && !balanceAvailable)}>{hint}</DualHint>
         <Presets
           items={[25, 50, 75, 100].map((pc) => {
-            const v = pc === 100 ? maxSats : Math.floor((totalSats * pc) / 100);
+            const v = pc === 100 ? maxSats : Math.floor((spendableSats * pc) / 100);
             return {
-              label: pc === 100 ? (maxSats < totalSats ? "Max" : "All") : `${pc}%`,
+              label: pc === 100 ? (maxSats < spendableSats ? "Max" : "All") : `${pc}%`,
               on: d.active === "sats" && v > 0 && sats === v,
               disabled: balanceLoading || v <= 0,
               pick: () => d.set("sats", v > 0 ? v : ""),

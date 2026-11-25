@@ -60,9 +60,7 @@ export default function SendSheet({
   const router = useRouter();
   const me = useP2pMe(open);
   const send = useP2pSend();
-  // /p2p/me's balance already leaves savings pots out (the bot's spendable
-  // balance); potSats is only to say how much sits in pots.
-  const { currentBtcPrice, potSats } = useWalletMetrics();
+  const { currentBtcPrice } = useWalletMetrics();
   const { transactions: botTxs } = useBotTransactionHistory({ enabled: open });
 
   const [step, setStep] = useState<Step>("form");
@@ -82,7 +80,9 @@ export default function SendSheet({
   const paymentKey = useRef(newPaymentKey());
 
   const limits = me.data?.limits;
+  // The bot's spendable balance (savings pots left out) and its pots, from one read
   const balance = me.data?.balance ?? 0;
+  const potSats = me.data?.pot_balance ?? 0;
   const maxSendable = limits ? Math.min(balance, limits.max_amount, limits.daily_remaining) : 0;
   const rate = currentBtcPrice || 0; // LKR per BTC
   const lkrFor = (s: number) => (rate > 0 ? (s / 1e8) * rate : 0);

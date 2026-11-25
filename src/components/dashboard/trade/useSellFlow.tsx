@@ -21,6 +21,7 @@ import {
   type SellOrder,
 } from "@/hooks/query/useSell";
 import { useWalletMetrics } from "@/hooks/query/useWalletMetrics";
+import { useP2pMe } from "@/hooks/query/useP2p";
 import { FetchyError } from "@/lib/fetchy";
 import { availableHint, fmtLkrCurrency, fmtLkrExact, fmtSats } from "@/lib/formatters";
 import { estimateSellLkr, satsForLkr } from "@/lib/sell";
@@ -67,13 +68,18 @@ export function useSellFlow({ kyc, close, open }: FlowArgs): FlowView {
   const [forceExpired, setForceExpired] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
 
-  // Sats in savings pots can't be collected, so sell up to the spendable balance
-  const {
-    spendableSats,
-    potSats,
-    balanceAvailable,
-    isLoading: balanceLoading,
-  } = useWalletMetrics();
+  // Sats in savings pots can't be collected, so sell up to the spendable
+  // balance. /p2p/me is live (the bot's spendable balance and pots, from one
+  // read); the wallet summary is cached up to ~10 min, so a pot withdrawal
+  // wouldn't show. Fall back to the summary when /p2p/me isn't available (P2P
+  // off, an old login): its numbers are older but agree with each other.
+  const me = useP2pMe(open);
+  const summary = useWalletMetrics();
+  const live = me.data;
+  const spendableSats = live ? live.balance : summary.spendableSats;
+  const potSats = live ? (live.pot_balance ?? 0) : summary.potSats;
+  const balanceAvailable = live ? true : summary.balanceAvailable;
+  const balanceLoading = me.isLoading || (!live && summary.isLoading);
   const { data: price } = useSellPrice(open);
   const { current: bankAccount, verified, isLoading: bankLoading } = useBankAccounts();
   const quoteM = useSellQuote();

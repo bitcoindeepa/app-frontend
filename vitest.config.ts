@@ -10,9 +10,11 @@ export default defineConfig({
     alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
   },
   test: {
-    // Logic only for now. Hooks and components will get a jsdom project.
+    // Node unless a file asks for a browser with `// @vitest-environment jsdom`
     environment: "node",
     include: ["src/**/*.test.{ts,tsx}"],
+    // The backend the tests talk to (see src/test/server.ts)
+    env: { NEXT_PUBLIC_API_BASE_URL: "https://api.test" },
     restoreMocks: true,
     unstubEnvs: true,
     unstubGlobals: true,
@@ -20,7 +22,7 @@ export default defineConfig({
       provider: "v8",
       // The whole app, so files without a test count as 0% instead of being left out
       include: ["src/**/*.{ts,tsx}"],
-      exclude: ["src/**/*.test.{ts,tsx}", "src/**/*.d.ts"],
+      exclude: ["src/**/*.test.{ts,tsx}", "src/**/*.d.ts", "src/test/**"],
       // json-summary feeds the README badge (.github/workflows/tests.yml)
       reporter: ["text-summary", "json-summary"],
     },

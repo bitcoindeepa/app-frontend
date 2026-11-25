@@ -40,7 +40,8 @@ Remaining:
 - [ ] Issue/PR templates and `good first issue` labels before the event
 - [x] Vitest, with tests for the logic in `src/lib` (amounts, fees, formatting, validation, activity)
 - [x] Tests for `fetchy` (401 and 403 handling), `auth`, `app-lock`, the launch scripts and the service worker update
-- [ ] Tests for the platform layer, then hooks and components (jsdom + Testing Library + MSW)
+- [x] Tests for the platform layer and the session, app lock, passkey, send and sell hooks (Testing Library + MSW)
+- [ ] Tests for the screens: send, buy and sell, login, passkey lock, settings
 - [ ] Dev mock login: needs a dev-only backend endpoint, decide later
 - [ ] Later: httpOnly cookie session instead of the localStorage token (backend change)
 - [ ] Investigate: the bottom nav prefetches each dashboard route 2–5 times (different `_rsc` keys) within a couple of seconds of loading

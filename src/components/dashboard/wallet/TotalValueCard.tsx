@@ -212,11 +212,15 @@ export function TotalValueCard({
   );
 }
 
-/** Ticker props for a fiat amount. Under $100 it ticks in cents to keep them. */
+/** Ticker props for a fiat amount. Rupees tick in cents (always two decimals); dollars under $100 too. */
 // The ticker lays its parts out as flex items, which drops plain edge spaces: use NBSPs.
 function fiatTicker(lkr: number, usdRate: number | undefined) {
   if (usdRate === undefined) {
-    return { value: lkr, prefix: `≈ ${LKR_SYMBOL}\u00a0`, format: fmtLkr };
+    return {
+      value: lkr * 100,
+      prefix: `≈ ${LKR_SYMBOL}\u00a0`,
+      format: (c: number) => fmtLkr(c / 100),
+    };
   }
   const usd = lkr * usdRate;
   return usd < 100

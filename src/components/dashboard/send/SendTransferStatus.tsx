@@ -7,7 +7,7 @@ import { ResultHero, Timeline, type TimelineState } from "@/components/dashboard
 import { useSecondsLeft } from "@/hooks/useSecondsLeft";
 import { celebrate } from "@/lib/celebrate";
 import { TELEGRAM_BOT_URL } from "@/lib/constants";
-import { fmtActivityDateTime, fmtSats, LKR_SYMBOL } from "@/lib/formatters";
+import { fmtActivityDateTime, fmtLkrCurrency, fmtSats } from "@/lib/formatters";
 import { recipientLabel, type P2pTransfer } from "@/lib/p2p";
 import { usePlatform } from "@/platform";
 
@@ -70,7 +70,9 @@ export function transferRows(t: P2pTransfer) {
   return [
     { k: "Amount", v: `${fmtSats(t.amount)} sats` },
     // The bot sends a bare number ("1,234.56"): add the currency.
-    ...(t.amount_lkr ? [{ k: "Value", v: `≈ ${LKR_SYMBOL} ${t.amount_lkr}` }] : []),
+    ...(t.amount_lkr
+      ? [{ k: "Value", v: `≈ ${fmtLkrCurrency(Number(String(t.amount_lkr).replace(/,/g, "")))}` }]
+      : []),
     ...(t.to ? [{ k: "To", v: recipientLabel(t.to) }] : []),
     ...(t.memo ? [{ k: "Note", v: t.memo }] : []),
     { k: "Date", v: fmtActivityDateTime(t.created_at) },

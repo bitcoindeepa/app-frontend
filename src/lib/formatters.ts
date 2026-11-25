@@ -92,8 +92,9 @@ export function fmtActivityDateTime(dateInput: string | Date): string {
 
 // Blot out digits in a formatted string while keeping icons/currency codes/units
 // visible, e.g. "රු. 32,000" -> "රු. ****" when the user hides their balance.
+// A number starts with a digit, so the dot in "රු." stays.
 export function maskDigits(value: string, visible: boolean): string {
-  return visible ? value : value.replace(/[\d,.]+[KM]?/g, "****");
+  return visible ? value : value.replace(/\d[\d,.]*[KM]?/g, "****");
 }
 
 // US dollars, whole (e.g. 1234.5 -> "$1,235")

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { cn } from "cn";
 import { Hero } from "@/components/ui/hero";
 import { ValueSkeleton } from "@/components/ui/value-skeleton";
@@ -28,6 +27,8 @@ export interface TotalValueCardProps {
   /** LKR → USD multiplier (undefined while the USD price is unknown). */
   usdRate?: number;
   isLoading?: boolean;
+  /** Opens the calculator sheet (the icon at the bottom right). */
+  onOpenCalculator: () => void;
 }
 
 export function TotalValueCard({
@@ -44,6 +45,7 @@ export function TotalValueCard({
   onToggleCurrency,
   usdRate,
   isLoading = false,
+  onOpenCalculator,
 }: TotalValueCardProps) {
   // Tap the balance to swap the big number between sats (default) and fiat.
   const [primary, setPrimary] = useState<"fiat" | "sats">("sats");
@@ -53,7 +55,6 @@ export function TotalValueCard({
   const fiat = (lkr: number) => (isUsd ? fmtUsd(lkr * usdRate) : `${LKR_SYMBOL} ${fmtLkr(lkr)}`);
   const isProfit = changePercent >= 0;
   const satsText = `${fmtSats(totalSats)} sats`;
-  const router = useRouter();
 
   return (
     <Hero priority>
@@ -200,7 +201,7 @@ export function TotalValueCard({
         type="button"
         onClick={() => {
           haptic.impact("light");
-          router.push("/dashboard/calculator");
+          onOpenCalculator();
         }}
         aria-label="Open calculator"
         className="press hit bg-onbrand-tile text-onbrand-tile-ink absolute right-3 bottom-4 flex size-7 items-center justify-center rounded-lg border-0"

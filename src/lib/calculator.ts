@@ -1,4 +1,4 @@
-// BTC / LKR / USD conversions for the calculator (/dashboard/calculator).
+// BTC / LKR / USD conversions for the calculator sheet.
 
 export type CalcUnit = "lkr" | "usd" | "btc" | "sats";
 

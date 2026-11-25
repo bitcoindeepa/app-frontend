@@ -10,12 +10,14 @@ import { useWalletMetrics } from "@/hooks/query/useWalletMetrics";
 import { useUser } from "@/hooks/useUser";
 import { useBalanceVisible } from "@/hooks/useBalanceVisible";
 import { useDisplayCurrency } from "@/hooks/useDisplayCurrency";
+import { useSheets } from "@/components/dashboard/sheets";
 
 /** The Wallet tab. `news` is the server-rendered carousel slot (off for now, see app/dashboard/page.tsx). */
 export function WalletScreen({ news }: { news?: React.ReactNode }) {
   const { visible, toggle: toggleVisible } = useBalanceVisible();
   const { currency, toggle: toggleCurrency } = useDisplayCurrency();
   const { subscription, subscriptionLoading } = useUser();
+  const { openCalculator } = useSheets();
 
   const {
     transactions,
@@ -59,6 +61,7 @@ export function WalletScreen({ news }: { news?: React.ReactNode }) {
         onToggleCurrency={toggleCurrency}
         usdRate={usdRate}
         isLoading={isLoading}
+        onOpenCalculator={openCalculator}
       />
 
       <QuickActions />

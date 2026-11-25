@@ -23,7 +23,7 @@ import {
 import { useWalletMetrics } from "@/hooks/query/useWalletMetrics";
 import { useP2pMe } from "@/hooks/query/useP2p";
 import { FetchyError } from "@/lib/fetchy";
-import { availableHint, fmtLkrCurrency, fmtLkrExact, fmtSats } from "@/lib/formatters";
+import { fmtLkrCurrency, fmtLkrExact, fmtSats } from "@/lib/formatters";
 import { estimateSellLkr, satsForLkr } from "@/lib/sell";
 import { sellAmountSchema } from "@/lib/validations";
 import { haptic } from "@/platform";
@@ -39,6 +39,7 @@ import {
 import { ErrorRow, HoldButton, LockRow, ReviewHeader } from "./parts";
 import { fmtFeePercent } from "./useBuyFlow";
 import { verifyCopy } from "./verify-copy";
+import { MovableHint } from "./MovableBalance";
 
 function useSecondsLeft(expiresAt: string | undefined) {
   const [now, setNow] = useState(() => Date.now());
@@ -208,11 +209,11 @@ export function useSellFlow({ kyc, close, open }: FlowArgs): FlowView {
   let footer: React.ReactNode;
 
   if (current === "amount") {
-    let hint: string;
+    let hint: React.ReactNode;
     if (error) hint = error;
     else if (balanceLoading) hint = "Checking your balance…";
     else if (!balanceAvailable) hint = "Your balance couldn't be loaded right now";
-    else hint = availableHint(spendableSats, potSats);
+    else hint = <MovableHint movableSats={spendableSats} />;
 
     const kycGate = !kyc.loading && !kyc.approved ? verifyCopy(kyc.status) : null;
     const bankGate = !kycGate && !bankLoading && !verified ? bankRequiredCopy(bankAccount) : null;

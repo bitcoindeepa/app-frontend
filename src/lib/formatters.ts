@@ -5,19 +5,16 @@ export function formatSatoshis(satoshis: number): string {
   return (satoshis / 100_000_000).toFixed(8);
 }
 
-// Format a whole-number LKR amount with thousands separators (e.g. 45700 -> "45,700")
+// An LKR amount with thousands separators and always two decimals, as every
+// rupee value in the app is shown (e.g. 45700 -> "45,700.00")
 export function fmtLkr(value: number): string {
-  if (!Number.isFinite(value)) return "0";
-  return value.toLocaleString("en-US", { maximumFractionDigits: 0 });
+  if (!Number.isFinite(value)) return "0.00";
+  return value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-// LKR with cents for payouts (e.g. 19800.5 -> "රු. 19,800.50")
+// LKR with the රු. symbol and cents (e.g. 19800.5 -> "රු. 19,800.50")
 export function fmtLkrExact(value: number): string {
-  if (!Number.isFinite(value)) return `${LKR_SYMBOL} 0.00`;
-  return `${LKR_SYMBOL} ${value.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+  return `${LKR_SYMBOL} ${fmtLkr(value)}`;
 }
 
 // Whole sats with separators (e.g. 100000 -> "100,000")
@@ -28,7 +25,7 @@ export function fmtSats(sats: number): string {
 // Sri Lankan Rupee symbol used in place of the "LKR" code throughout the UI
 export const LKR_SYMBOL = "රු.";
 
-// Full LKR amount with the රු. symbol (e.g. 45700 -> "රු. 45,700")
+// Full LKR amount with the රු. symbol (e.g. 45700 -> "රු. 45,700.00")
 export function fmtLkrCurrency(value: number): string {
   return `${LKR_SYMBOL} ${fmtLkr(value)}`;
 }

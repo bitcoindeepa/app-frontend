@@ -191,7 +191,7 @@ export function PortfolioChart({ transactions, currentBtcPrice }: PortfolioChart
                 : "";
             },
             label: (context: TooltipItem<"line">) =>
-              `${context.dataset.label}: ${fmtLkrCurrency(Math.round(context.parsed.y ?? 0))}`,
+              `${context.dataset.label}: ${fmtLkrCurrency(context.parsed.y ?? 0)}`,
           },
         },
       },

@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
 import { BigEmoji } from "@/components/dashboard/trade/parts";
-import { webLoginUrl } from "@/lib/auth";
+import { startWebLogin } from "@/lib/auth";
 import { usePlatform } from "@/platform";
 
 /**
@@ -36,9 +36,7 @@ export function ReloginPrompt({
         inTelegram ? (
           <Button onClick={() => platform.close()}>Close the app</Button>
         ) : (
-          <Button onClick={() => window.location.assign(webLoginUrl(returnTo))}>
-            Log in with Telegram
-          </Button>
+          <Button onClick={() => startWebLogin(returnTo)}>Log in with Telegram</Button>
         )
       }
     >

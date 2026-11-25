@@ -27,6 +27,8 @@ export interface TotalValueCardProps {
   /** LKR → USD multiplier (undefined while the USD price is unknown). */
   usdRate?: number;
   isLoading?: boolean;
+  /** Opens the calculator sheet (the icon at the bottom right). */
+  onOpenCalculator: () => void;
 }
 
 export function TotalValueCard({
@@ -43,6 +45,7 @@ export function TotalValueCard({
   onToggleCurrency,
   usdRate,
   isLoading = false,
+  onOpenCalculator,
 }: TotalValueCardProps) {
   // Tap the balance to swap the big number between sats (default) and fiat.
   const [primary, setPrimary] = useState<"fiat" | "sats">("sats");
@@ -56,7 +59,7 @@ export function TotalValueCard({
   return (
     <Hero priority>
       <div className="flex items-center justify-between">
-        <p className="text-[14px] leading-[14px] font-medium">Total value</p>
+        <p className="hero-text text-[14px] leading-[14px] font-medium">Total value</p>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -110,8 +113,8 @@ export function TotalValueCard({
         </>
       ) : !balanceAvailable ? (
         <div className="flex flex-col gap-1 py-1">
-          <p className="num text-[22px] leading-8 font-bold">Balance unavailable</p>
-          <p className="text-[12px] leading-4 text-white/80">
+          <p className="num hero-text text-[22px] leading-8 font-bold">Balance unavailable</p>
+          <p className="hero-text text-[12px] leading-4 text-white/90">
             Couldn&apos;t reach your wallet. Try again in a few minutes.
           </p>
         </div>
@@ -131,7 +134,7 @@ export function TotalValueCard({
               key={flipKey}
               // Fixed height: sats, LKR, USD and the masked text all sit on the same 48px line,
               // so the card doesn't grow or shrink when the unit flips.
-              className="num flex h-12 animate-[flip_.45s_cubic-bezier(.2,.9,.3,1.2)] items-center overflow-visible text-[36px] leading-12 font-bold tracking-[-0.015em]"
+              className="num hero-text flex h-12 animate-[flip_.45s_cubic-bezier(.2,.9,.3,1.2)] items-center overflow-visible text-[36px] leading-12 font-bold tracking-[-0.015em]"
             >
               {visible ? (
                 // One ticker for sats, LKR and USD: every switch rolls the digits.
@@ -145,14 +148,14 @@ export function TotalValueCard({
               )}
             </span>
           </button>
-          <p className="num flex items-center gap-2 text-[12px] leading-4 uppercase">
+          <p className="num hero-text flex items-center gap-2 text-[12px] leading-4 uppercase">
             {mask(`${fmtBtc(totalSats)} BTC`)}
             <span aria-hidden className="size-[2.2px] rounded-full bg-current" />
             {mask(primary === "sats" ? `≈ ${fiat(totalLkr)}` : satsText)}
           </p>
           {potSats > 0 && (
             // Included in the total above; locked until withdrawn from the pot in the bot
-            <p className="num flex items-center gap-1.5 text-[12px] leading-4 text-white/80">
+            <p className="num hero-text flex items-center gap-1.5 text-[12px] leading-4 text-white/90">
               <LockIcon />
               {mask(`${fmtSats(potSats)} sats`)} in savings pots
               <span aria-hidden className="size-[2.2px] rounded-full bg-current" />
@@ -192,15 +195,32 @@ export function TotalValueCard({
           )}
         </>
       )}
+
+      {/* Bottom right, level with the 24h pill */}
+      <button
+        type="button"
+        onClick={() => {
+          haptic.impact("light");
+          onOpenCalculator();
+        }}
+        aria-label="Open calculator"
+        className="press hit bg-onbrand-tile text-onbrand-tile-ink absolute right-3 bottom-4 flex size-7 items-center justify-center rounded-lg border-0"
+      >
+        <CalculatorIcon />
+      </button>
     </Hero>
   );
 }
 
-/** Ticker props for a fiat amount. Under $100 it ticks in cents to keep them. */
+/** Ticker props for a fiat amount. Rupees tick in cents (always two decimals); dollars under $100 too. */
 // The ticker lays its parts out as flex items, which drops plain edge spaces: use NBSPs.
 function fiatTicker(lkr: number, usdRate: number | undefined) {
   if (usdRate === undefined) {
-    return { value: lkr, prefix: `≈ ${LKR_SYMBOL}\u00a0`, format: fmtLkr };
+    return {
+      value: lkr * 100,
+      prefix: `≈ ${LKR_SYMBOL}\u00a0`,
+      format: (c: number) => fmtLkr(c / 100),
+    };
   }
   const usd = lkr * usdRate;
   return usd < 100
@@ -222,6 +242,24 @@ function LockIcon() {
     >
       <rect x="4" y="11" width="16" height="10" rx="2" />
       <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </svg>
+  );
+}
+
+function CalculatorIcon() {
+  return (
+    <svg
+      className="size-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <rect x="5" y="3" width="14" height="18" rx="2.5" />
+      <path d="M8.5 7.5h7M9 12h.01M12 12h.01M15 12h.01M9 15.5h.01M12 15.5h.01M15 15.5h.01M9 18h.01M12 18h.01M15 18h.01" />
     </svg>
   );
 }

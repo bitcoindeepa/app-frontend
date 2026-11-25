@@ -5,9 +5,37 @@ All notable changes to this project are documented here. The format follows
 
 Releasing: bump `version` in `package.json` and add a matching `## [x.y.z] - YYYY-MM-DD` section below in the release
 PR to `main`. When it merges, the Release workflow tags `vx.y.z` and publishes a GitHub release with that section as
-its notes. Keep unreleased work under `## [Unreleased]` until then.
+its notes. Keep unreleased work under `## [Unreleased]
 
-## [Unreleased]
+## [2.2.0] - 2026-11-26
+
+### Added
+
+- BTC / LKR / USD calculator, opened from a button on the Total value card as a bottom sheet. Type in LKR, USD, BTC
+  or sats and the others follow, using our buy price before fees (#131, #139).
+- Settings › App lock has an "Ask when opening the app" switch. Sends and sale payments still ask for a passkey every
+  time. Needs app-backend v2.1.0; against an older backend the app always asks on open (#140).
+- Hand-drawn animated logo, a glow and loading bar on the start screen, and a theme switch that spreads from the tap
+  (#129).
+- GitBook-ready user guide in `docs/user-guide/` (#105).
+- OpenSSF Scorecard workflow (#130).
+
+### Changed
+
+- New app icon: white දීප on Satoshi Orange with a slight gradient, for the home screen, PWA install and the
+  Apple touch icon. The browser favicon is now just the දීප on a transparent background. The full icon kit (iOS,
+  Android, macOS, Windows, web, source SVGs) is in `design/app-icon/` (#138).
+- Logging in with Telegram on the web returns to the app unlocked, without the passkey lock screen. The backend
+  session stays locked, so sends, sale payments, bank account and passkey changes still ask (#141).
+- The Send confirm button is a plain button instead of press-and-hold. Sell still uses press-and-hold (#141).
+- Rupee amounts always show two decimals, for example `රු. 45,700.00` (#141).
+- White text on the Total value card has a soft shadow so it reads on the photo (#141).
+
+### Fixed
+
+- On the landing screen of the installed PWA, the status bar, bottom bar and `theme-color` now match the card, and
+  the page no longer scrolls to show a dark band at the bottom (#129).
+- "Prefer Telegram?" and the error page's "Open this in Telegram" open the Mini App instead of the bot chat (#129).
 
 ## [2.1.0] - 2026-11-25
 
@@ -70,6 +98,7 @@ A ground-up revamp of the app.
 
 First release. See the [v1.0.0 release notes](https://github.com/bitcoindeepa/app-frontend/releases/tag/v1.0.0).
 
-[Unreleased]: https://github.com/bitcoindeepa/app-frontend/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/bitcoindeepa/app-frontend/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/bitcoindeepa/app-frontend/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/bitcoindeepa/app-frontend/compare/v1.0.0...v2.1.0
 [1.0.0]: https://github.com/bitcoindeepa/app-frontend/releases/tag/v1.0.0

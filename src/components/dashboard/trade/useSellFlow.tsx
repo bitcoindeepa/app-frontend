@@ -102,10 +102,8 @@ export function useSellFlow({ kyc, close, open }: FlowArgs): FlowView {
       price ? satsForLkr(lkr, price.feeBasisPoints, price.btcLkrRate, price.bankChargeLkr ?? 0) : 0,
     toLkr: (sats) =>
       price
-        ? Math.floor(
-            estimateSellLkr(sats, price.feeBasisPoints, price.btcLkrRate, price.bankChargeLkr ?? 0)
-              .amountLkr
-          )
+        ? estimateSellLkr(sats, price.feeBasisPoints, price.btcLkrRate, price.bankChargeLkr ?? 0)
+            .amountLkr
         : 0,
   });
   const sats = d.sats;

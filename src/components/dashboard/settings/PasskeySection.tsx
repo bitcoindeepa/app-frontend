@@ -3,15 +3,24 @@
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { List, ListRow, Section } from "@/components/ui/section";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast";
-import { useAddPasskey, usePasskeyStatus, useRemovePasskey } from "@/hooks/query/usePasskey";
+import {
+  useAddPasskey,
+  usePasskeyStatus,
+  useRemovePasskey,
+  useSetLockOnOpen,
+} from "@/hooks/query/usePasskey";
+import { locksOnOpen } from "@/lib/app-lock";
 import { passkeyCancelled, passkeyErrorMessage } from "@/lib/passkey";
 import { haptic, usePlatform } from "@/platform";
 import { Icon } from "./icons";
 
 /**
  * Passkey lock settings. Web/PWA: add passkeys (the first one turns the
- * lock on), see and remove them (removing the last turns it off). Inside
+ * lock on), see and remove them (removing the last turns it off), and choose
+ * whether the app asks for the passkey when it opens (on by default; sends
+ * and sale payments ask either way). Inside
  * Telegram passkeys can't run, so it points to Telegram's own passcode lock.
  */
 export function PasskeySection() {
@@ -20,6 +29,7 @@ export function PasskeySection() {
   const { data } = usePasskeyStatus();
   const add = useAddPasskey();
   const remove = useRemovePasskey();
+  const setLockOnOpen = useSetLockOnOpen();
 
   if (!data) return null;
 
@@ -65,6 +75,27 @@ export function PasskeySection() {
     });
   };
 
+  const toggleLockOnOpen = (on: boolean) => {
+    setLockOnOpen.mutate(on, {
+      onSuccess: () => {
+        haptic.notify("success");
+        toast({
+          title: on ? "We'll ask when you open the app" : "We won't ask when you open the app",
+          description: on ? undefined : "Sending and selling still need your passkey.",
+        });
+      },
+      onError: (e) => {
+        if (passkeyCancelled(e)) return;
+        haptic.notify("error");
+        toast({
+          type: "error",
+          title: "Couldn't change it",
+          description: passkeyErrorMessage(e),
+        });
+      },
+    });
+  };
+
   const removePasskey = async (id: string, name: string, last: boolean) => {
     const confirmed = await platform.confirm({
       title: `Remove ${name}?`,
@@ -103,6 +134,19 @@ export function PasskeySection() {
           />
         ) : (
           <>
+            <ListRow
+              icon={<Icon name="lock" className="text-ink2" />}
+              title="Ask when opening the app"
+              subtitle="Sending and selling always ask"
+              after={
+                <Switch
+                  label="Ask for your passkey when opening the app"
+                  checked={setLockOnOpen.isPending ? setLockOnOpen.variables : locksOnOpen(data)}
+                  disabled={setLockOnOpen.isPending}
+                  onCheckedChange={toggleLockOnOpen}
+                />
+              }
+            />
             {data.passkeys.map((passkey) => (
               <ListRow
                 key={passkey.id}

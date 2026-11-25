@@ -5,6 +5,7 @@ import { cn } from "cn";
 import { BtcCoin } from "@/components/ui/btc-coin";
 import { Button } from "@/components/ui/button";
 import { haptic } from "@/platform";
+import { fmtLkr } from "@/lib/formatters";
 
 export type Unit = "lkr" | "sats";
 
@@ -14,6 +15,8 @@ const MAX_DIGITS = 9;
 const clean = (v: string) => v.replace(/\D/g, "").replace(/^0+/, "").slice(0, MAX_DIGITS);
 
 const group = (n: number) => (n > 0 ? Math.round(n).toLocaleString("en-US") : "");
+/** A converted rupee value, shown (not typed): always two decimals */
+const groupLkr = (n: number) => (n > 0 ? fmtLkr(n) : "");
 
 /**
  * Two-box amount entry: type in either currency and the other follows. The box
@@ -47,6 +50,8 @@ export function useDualAmount({
     sats,
     /** What each box shows: the typed value (grouped) or the conversion. */
     text: (unit: Unit) => group(unit === "lkr" ? lkr : sats),
+    /** A read-only conversion: rupees with two decimals */
+    display: (unit: Unit) => (unit === "lkr" ? groupLkr(lkr) : group(sats)),
     set,
     flipped: s.flipped,
     toggleFlip: () => setS((p) => ({ ...p, flipped: !p.flipped })),
@@ -89,6 +94,9 @@ function Box({
   footer?: React.ReactNode;
 }) {
   const active = d.active === unit && d.hasValue;
+  // Rupees read with two decimals; while editing, the box holds the whole
+  // number being typed (amounts are entered in whole rupees and sats)
+  const [editing, setEditing] = useState(false);
   const amountClass = cn(
     "num min-w-0 flex-1 border-0 bg-transparent p-0 text-[30px] leading-[1.2] font-bold tracking-[-0.02em] outline-none",
     active ? "text-foreground" : "text-ink2",
@@ -116,7 +124,9 @@ function Box({
           pattern="[0-9]*"
           autoComplete="off"
           placeholder="0"
-          value={d.text(unit)}
+          value={editing ? d.text(unit) : d.display(unit)}
+          onFocus={() => setEditing(true)}
+          onBlur={() => setEditing(false)}
           onChange={(e) => d.set(unit, e.target.value)}
           // The keyboard's Go key does what the (hidden behind it) main button does.
           enterKeyHint={onSubmit ? "go" : undefined}
@@ -144,7 +154,7 @@ function Estimate({ unit, label, d }: { unit: Unit; label: string; d: DualAmount
         aria-label={`${label} (estimate)`}
         className={cn("num text-[17px] font-bold", d.hasValue ? "text-foreground" : "text-ink3")}
       >
-        ≈ {d.text(unit) || "0"} {unit === "sats" ? "sats" : "LKR"}
+        ≈ {d.display(unit) || (unit === "sats" ? "0" : "0.00")} {unit === "sats" ? "sats" : "LKR"}
       </output>
     </div>
   );

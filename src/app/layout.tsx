@@ -36,23 +36,15 @@ export const metadata: Metadata = {
   title: "Bitcoin Deepa",
   description:
     "Bitcoin membership reward accrual with subscription management for Sri Lankan users.",
-  // Brand kit (bitcoindeepa.com/brand): the large-glyph දීප icon for tabs, on
-  // white or charcoal to match the browser theme; the standard one elsewhere.
+  // App icon kit (design/app-icon/): the tab favicon is just the දීප in
+  // Satoshi Orange on a transparent background, which reads on light and dark
+  // tabs alike. The home-screen icons keep the orange tile (iOS fills a
+  // transparent touch icon with black).
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "16x16 32x32 48x48" },
-      {
-        url: "/icons/favicon-32.png",
-        type: "image/png",
-        sizes: "32x32",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icons/favicon-dark-32.png",
-        type: "image/png",
-        sizes: "32x32",
-        media: "(prefers-color-scheme: dark)",
-      },
+      { url: "/icons/favicon.svg", type: "image/svg+xml" },
+      { url: "/icons/favicon-32.png", type: "image/png", sizes: "32x32" },
     ],
     apple: "/apple-touch-icon.png",
   },

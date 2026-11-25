@@ -1,4 +1,5 @@
 import { API_BASE_URL } from "@/lib/constants";
+import { markLoginStarted } from "@/lib/app-lock";
 
 /**
  * Client-side view of the backend session (BitcoinDeepa-DCA-BE user_session).
@@ -240,6 +241,15 @@ export async function logoutSession(all = false): Promise<void> {
     throw new Error(`Logout failed (${response.status})`);
   }
   clearSession();
+}
+
+/**
+ * Start "Log In with Telegram": a full-page redirect to Telegram and back.
+ * The page it returns to doesn't ask for the passkey (lib/app-lock.ts).
+ */
+export function startWebLogin(returnTo?: string, referralCode?: string): void {
+  markLoginStarted();
+  window.location.assign(webLoginUrl(returnTo, referralCode));
 }
 
 /** Where the web login starts (a full-page redirect to Telegram and back) */

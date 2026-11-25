@@ -16,6 +16,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "format": "prettier --write .",
     "init-git-hooks": "git config core.hooksPath .githooks"
   },
@@ -48,6 +49,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/sanitize-html": "^2.16.1",
+    "@vitest/coverage-v8": "^5.1.2",
     "eslint": "9.39.4",
     "eslint-config-next": "^16.2.9",
     "postcss": "^8.4.41",

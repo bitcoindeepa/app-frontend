@@ -16,5 +16,13 @@ export default defineConfig({
     restoreMocks: true,
     unstubEnvs: true,
     unstubGlobals: true,
+    coverage: {
+      provider: "v8",
+      // The whole app, so files without a test count as 0% instead of being left out
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["src/**/*.test.{ts,tsx}", "src/**/*.d.ts"],
+      // json-summary feeds the README badge (.github/workflows/tests.yml)
+      reporter: ["text-summary", "json-summary"],
+    },
   },
 });

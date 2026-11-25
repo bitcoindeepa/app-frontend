@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
-  FINAL_P2P_STATUSES,
   isReloginError,
   normalizeRecipient,
   p2pPollInterval,
   recipientLabel,
+  type P2pTransferStatus,
 } from "@/lib/p2p";
 
 describe("p2pPollInterval", () => {
@@ -12,9 +12,12 @@ describe("p2pPollInterval", () => {
     expect(p2pPollInterval(undefined)).toBe(false);
   });
 
-  it.each(FINAL_P2P_STATUSES)("stops once the transfer is %s", (status) => {
-    expect(p2pPollInterval(status)).toBe(false);
-  });
+  it.each<P2pTransferStatus>(["completed", "failed", "cancelled", "expired"])(
+    "stops once the transfer is %s",
+    (status) => {
+      expect(p2pPollInterval(status)).toBe(false);
+    }
+  );
 
   it("polls every 2.5s while it runs or waits for Confirm", () => {
     expect(p2pPollInterval("processing")).toBe(2_500);

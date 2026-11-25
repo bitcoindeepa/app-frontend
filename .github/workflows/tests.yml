@@ -1,0 +1,76 @@
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main, dev]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    outputs:
+      coverage: ${{ steps.coverage.outputs.lines }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Test
+        run: bun run test:coverage
+
+      - name: Read line coverage
+        id: coverage
+        run: |
+          lines=$(jq -r '.total.lines.pct' coverage/coverage-summary.json)
+          echo "lines=$lines" >> "$GITHUB_OUTPUT"
+          echo "Line coverage: ${lines}%" >> "$GITHUB_STEP_SUMMARY"
+
+  # The README's coverage badge reads coverage.json from the `badges` branch
+  # (a shields.io endpoint). Only main updates it.
+  coverage-badge:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Publish coverage.json to the badges branch
+        env:
+          PCT: ${{ needs.test.outputs.coverage }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! [[ "$PCT" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+            echo "Unexpected coverage value: '$PCT'" >&2
+            exit 1
+          fi
+          whole=${PCT%.*}
+          if [ "$whole" -ge 90 ]; then color=brightgreen
+          elif [ "$whole" -ge 75 ]; then color=green
+          elif [ "$whole" -ge 60 ]; then color=yellow
+          elif [ "$whole" -ge 40 ]; then color=orange
+          else color=red
+          fi
+
+          mkdir badges && cd badges
+          git init --quiet --initial-branch=badges
+          printf '{"schemaVersion":1,"label":"coverage","message":"%s%%","color":"%s"}\n' \
+            "$PCT" "$color" > coverage.json
+          git add coverage.json
+          git -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit --quiet --message "coverage: ${PCT}% of lines at ${GITHUB_SHA::7}"
+          # One commit, replaced each time: the branch holds no history
+          git push --quiet --force \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" badges

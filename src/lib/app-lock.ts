@@ -2,16 +2,19 @@
  * Local half of the passkey lock (the backend's GET /passkey is the other
  * half). Web/PWA only: passkeys can't run inside Telegram's webview, so the
  * Mini App is never locked. The app locks itself:
- * - on every launch (a page load starts locked)
- * - when it comes back after RELOCK_AFTER_MS in the background
- * - when the backend answers 403 passkey_required (fetchy calls lockApp),
- *   e.g. the 12 h unlock ran out mid-session
+ * - on every launch (a page load starts locked) and when it comes back after
+ *   RELOCK_AFTER_MS in the background, if the member asks for the passkey
+ *   when the app opens (GET /passkey `lock_on_open`, on by default)
+ * - when the backend answers 403 passkey_required (fetchy calls
+ *   passkeyRequired), e.g. the 12 h unlock ran out mid-session or a bank
+ *   account change with the prompt on open turned off
  * Unlocking with a passkey (POST /passkey/unlock) unlocks both.
  *
- * `bitcoin-deepa-passkey-on` (localStorage) only remembers that this device's
- * member has a passkey, so the lock screen shows at once on launch instead
- * of flashing balances while GET /passkey loads. It's a UX hint: the backend
- * still refuses money-moving calls from a locked session.
+ * `bitcoin-deepa-passkey-on` (localStorage) only remembers that this device
+ * should lock on launch (a passkey and the prompt on open), so the lock
+ * screen shows at once instead of flashing balances while GET /passkey
+ * loads. It's a UX hint: the backend still refuses money-moving calls from
+ * a locked session.
  */
 
 export const RELOCK_AFTER_MS = 60_000;
@@ -44,18 +47,40 @@ export function lockApp(): void {
 let required = 0;
 export const getPasskeyRequiredSnapshot = (): number => required;
 
+// The backend refused a call until this session unlocks: locks the app even
+// when the member turned the prompt on open off
+let unlockNeeded = false;
+export const getUnlockNeededSnapshot = (): boolean => unlockNeeded;
+
 /** The backend answered 403 passkey_required (fetchy) */
 export function passkeyRequired(): void {
   required += 1;
   locked = true;
+  unlockNeeded = true;
   emit();
 }
 
 export function unlockApp(): void {
-  if (!locked) return;
+  if (!locked && !unlockNeeded) return;
+  locked = false;
+  unlockNeeded = false;
+  emit();
+}
+
+/**
+ * Drop the launch lock without unlocking (the member turned the prompt on
+ * open off). A pending 403 passkey_required still keeps the app locked.
+ */
+export function clearLaunchLock(): void {
+  if (!locked || unlockNeeded) return;
   locked = false;
   emit();
 }
+
+/** Whether this status means "ask for the passkey when the app opens" */
+export const locksOnOpen = (status: { enabled: boolean; lock_on_open?: boolean }): boolean =>
+  // An older backend without the setting always asked
+  status.enabled && status.lock_on_open !== false;
 
 export function readPasskeyHint(): boolean {
   try {

@@ -37,12 +37,12 @@ export function renderHookWithClient<Result, Props>(
 export function renderScreen(ui: ReactElement, options: { queryClient?: QueryClient } = {}) {
   const { queryClient = createTestQueryClient() } = options;
   const user = userEvent.setup();
-  const view = render(
+  const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>{ui}</ToastProvider>
+      <ToastProvider>{children}</ToastProvider>
     </QueryClientProvider>
   );
-  return { user, queryClient, ...view };
+  return { user, queryClient, ...render(ui, { wrapper }) };
 }
 
 /** Runs something that is expected to fail (inside act) and returns what it threw */

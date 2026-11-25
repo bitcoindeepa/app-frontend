@@ -54,11 +54,17 @@ export function convert(
 /** Decimal places each unit can be typed with */
 export const CALC_DECIMALS: Record<CalcUnit, number> = { lkr: 2, usd: 2, btc: 8, sats: 0 };
 
+/**
+ * Most whole-number digits each unit takes: 16 for sats (all 21M BTC is
+ * 2,100,000,000,000,000), 15 otherwise (the most a JS number holds exactly).
+ */
+const MAX_DIGITS: Record<CalcUnit, number> = { lkr: 15, usd: 15, btc: 15, sats: 16 };
+
 /** Keeps digits and one dot (up to the unit's decimals); drops grouping commas and leading zeros. */
 export function cleanAmount(raw: string, unit: CalcUnit): string {
   const decimals = CALC_DECIMALS[unit];
   const [whole = "", ...rest] = raw.replace(/[^\d.]/g, "").split(".");
-  const int = whole.replace(/^0+(?=\d)/, "").slice(0, 12);
+  const int = whole.replace(/^0+(?=\d)/, "").slice(0, MAX_DIGITS[unit]);
   if (decimals === 0 || rest.length === 0) return int;
   return `${int || "0"}.${rest.join("").slice(0, decimals)}`;
 }

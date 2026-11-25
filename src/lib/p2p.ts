@@ -24,8 +24,11 @@ export interface P2pMe {
   telegram_id: number;
   username?: string;
   name?: string;
+  /** What the user can send: the wallet minus savings pots */
   balance: number;
   balance_lkr?: string;
+  /** Sats in savings pots, read with balance. Missing on older bots. */
+  pot_balance?: number;
   limits: {
     max_amount: number;
     daily_limit: number;

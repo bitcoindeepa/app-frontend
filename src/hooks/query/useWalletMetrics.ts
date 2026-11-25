@@ -31,6 +31,12 @@ export function useWalletMetrics({
   const totalSats = summary?.total_balance ?? 0;
   // total_* are placeholder zeros when the wallet balance couldn't be fetched
   const balanceAvailable = summary?.balance_available !== false;
+  // Savings pots stay in the wallet (total_balance) but can't be sold or sent.
+  // An older backend has no pot fields: then everything is spendable.
+  const potSats = summary?.pot_balance ?? 0;
+  const spendableSats = summary?.spendable_balance ?? totalSats;
+  // Pots in LKR at the same rate as total_lkr, so the two always agree
+  const potLkr = totalSats > 0 ? (totalLkr * potSats) / totalSats : 0;
   const dcaSpent = summary?.dca.spent ?? 0;
   const dcaFees = summary?.dca.fees ?? 0;
   const dcaSats = summary?.dca.balance ?? 0;
@@ -56,6 +62,9 @@ export function useWalletMetrics({
     totalLkr,
     totalSats,
     balanceAvailable,
+    spendableSats,
+    potSats,
+    potLkr,
     dcaSpent,
     dcaFees,
     dcaSats,

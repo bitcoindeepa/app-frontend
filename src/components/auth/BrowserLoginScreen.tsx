@@ -13,6 +13,7 @@ import {
 } from "@/lib/constants";
 import { usePlatform } from "@/platform";
 import TelegramLoginButton from "@/components/auth/TelegramLoginButton";
+import { PasskeyLoginButton } from "@/components/auth/PasskeyLoginButton";
 import { InstallButton } from "@/pwa";
 
 /**
@@ -59,12 +60,14 @@ function openMiniApp(e: React.MouseEvent<HTMLAnchorElement>, isMobile: boolean) 
  * Shown when the app is opened outside Telegram (a plain browser tab).
  * "Log In with Telegram" is a redirect through the backend (OIDC), which
  * comes back with a session cookie; useSession then moves the user on. A
- * failed login comes back here with ?login_error=<code>.
+ * failed login comes back here with ?login_error=<code>. Members who added a
+ * passkey can sign in with it instead (PasskeyLoginButton).
  */
 export default function BrowserLoginScreen() {
   const { isMobileDevice } = usePlatform();
   // Only rendered on the client, once the platform is known
-  const [error] = useState(() =>
+  const [passkeyError, setPasskeyError] = useState<string | null>(null);
+  const [urlError] = useState(() =>
     typeof window === "undefined"
       ? null
       : loginErrorMessage(new URL(window.location.href).searchParams.get("login_error"))
@@ -77,6 +80,8 @@ export default function BrowserLoginScreen() {
     url.searchParams.delete("login_error");
     window.history.replaceState(null, "", url.pathname + url.search + url.hash);
   }, []);
+
+  const error = passkeyError ?? urlError;
 
   return (
     <LandingShell themeToggle aria-label="Sign in to Bitcoin Deepa">
@@ -94,6 +99,7 @@ export default function BrowserLoginScreen() {
 
       <div className="stagger mt-8 flex w-full flex-col gap-3">
         <TelegramLoginButton className="w-full" />
+        <PasskeyLoginButton onError={setPasskeyError} />
         {error && (
           <p role="alert" className="text-loss text-center text-[13px] font-semibold">
             {error}

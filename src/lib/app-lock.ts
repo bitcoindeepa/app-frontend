@@ -12,7 +12,10 @@
  *
  * Signing in doesn't ask for the passkey: the page a "Log In with Telegram"
  * redirect lands on starts unlocked (startWebLogin marks the login in
- * sessionStorage; this tab reads it once on load). The backend session stays
+ * sessionStorage; this tab reads it once on load). startWebLogin marks it
+ * only when the backend had confirmed this browser was signed out, so a
+ * cancelled or failed login can't return to a session the browser already
+ * had without the lock (a new session needs a login). The backend session stays
  * locked, so anything that needs the passkey (sends, sale payments, bank
  * accounts, passkey changes) still asks for it; the app locks again as usual
  * after RELOCK_AFTER_MS in the background or on the next launch.

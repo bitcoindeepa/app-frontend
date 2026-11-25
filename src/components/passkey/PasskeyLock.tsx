@@ -12,7 +12,7 @@ import { passkeyCancelled, passkeyErrorMessage } from "@/lib/passkey";
 import { haptic, usePlatform } from "@/platform";
 
 /**
- * Full-screen cover over the web dashboard (useAppLock decides when). It
+ * Full-screen cover over the web app (AppLockGate / useAppLock decide when). It
  * opens the browser's passkey prompt at once, and again whenever the app
  * comes back into focus; meanwhile only the logo shows. The locked screen
  * (unlock button, help, log out) appears only when that prompt is cancelled

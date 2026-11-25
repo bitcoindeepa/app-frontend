@@ -7,6 +7,17 @@ Releasing: bump `version` in `package.json` and add a matching `## [x.y.z] - YYY
 PR to `main`. When it merges, the Release workflow tags `vx.y.z` and publishes a GitHub release with that section as
 its notes. Keep unreleased work under `## [Unreleased]
 
+## [Unreleased]
+
+### Security
+
+- A cancelled or failed "Log In with Telegram" no longer opens the app without the passkey lock. The lock is skipped
+  after a login only when the backend had confirmed the browser was signed out.
+- The passkey lock covers every signed-in page, including `/verification` (KYC details), `/plans` and `/payment`,
+  not only the dashboard.
+- Signing out, an expired session or signing in as another account in the same tab (passkey sign-in) clears all
+  cached account data first, so one account's details never show to the next.
+
 ## [2.2.0] - 2026-11-26
 
 ### Added

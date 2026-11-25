@@ -9,6 +9,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useSession } from "@/hooks/useSession";
+import { usePasskeyApproval } from "@/hooks/query/usePasskey";
 import fetchy from "@/lib/fetchy";
 import { queryKeys } from "@/lib/query-keys";
 
@@ -196,8 +197,13 @@ function useInvalidateAfterSale() {
  */
 export function usePaySell(id: string) {
   const refresh = useInvalidateAfterSale();
+  const approve = usePasskeyApproval();
   return useMutation({
-    mutationFn: () => fetchy.post<SellOrder>(`/sell/orders/${id}/pay`),
+    // On the web each payment is approved with a passkey first (mandatory)
+    mutationFn: async () => {
+      const headers = await approve({ action: "sell_pay", order_id: id });
+      return fetchy.post<SellOrder>(`/sell/orders/${id}/pay`, undefined, { headers });
+    },
     onSuccess: (order) => refresh(order),
     onError: () => refresh(),
   });

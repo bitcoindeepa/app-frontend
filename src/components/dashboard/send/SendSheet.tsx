@@ -23,6 +23,7 @@ import { Spinner } from "@/components/ui/button";
 import { useSheets } from "@/components/dashboard/sheets";
 import { useBotTransactionHistory } from "@/hooks/query/useBotTransactionHistory";
 import { useWalletMetrics } from "@/hooks/query/useWalletMetrics";
+import { PasskeyStepError } from "@/lib/passkey";
 import { FetchyError } from "@/lib/fetchy";
 import { fmtLkrCurrency, fmtSats } from "@/lib/formatters";
 import { MovableHint } from "@/components/dashboard/trade/MovableBalance";
@@ -155,6 +156,12 @@ export default function SendSheet({
       haptic.notify(t.status === "failed" ? "error" : "success");
       setTransferId(t.id);
     } catch (err) {
+      // The passkey step didn't finish: nothing was sent
+      if (err instanceof PasskeyStepError) {
+        if (!err.cancelled) haptic.notify("error");
+        setSendError(err.message);
+        return;
+      }
       haptic.notify("error");
       // Not linked on the bot yet: a new login links the wallet, then the user
       // sends again (same payment key, so it can't send twice)

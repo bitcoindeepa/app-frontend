@@ -9,6 +9,7 @@ export const queryKeys = {
   subscriptionCurrent: ["subscription-current"] as const,
   kycStatus: ["kyc-status"] as const,
   userMe: ["user-me"] as const,
+  passkey: ["passkey"] as const,
   banks: ["banks"] as const,
   bankAccounts: ["bank-accounts"] as const,
   sellPrice: ["sell", "price"] as const,

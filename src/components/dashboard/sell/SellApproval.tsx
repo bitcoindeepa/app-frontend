@@ -7,6 +7,7 @@ import { ReloginPrompt } from "@/components/auth/ReloginPrompt";
 import { useCancelSell, usePaySell, type SellOrder } from "@/hooks/query/useSell";
 import { useSecondsLeft } from "@/hooks/useSecondsLeft";
 import { TELEGRAM_BOT_URL } from "@/lib/constants";
+import { PasskeyStepError } from "@/lib/passkey";
 import { FetchyError } from "@/lib/fetchy";
 import { fmtSats } from "@/lib/formatters";
 import { isReloginError } from "@/lib/p2p";
@@ -66,6 +67,16 @@ export function SellApproval({ order }: { order: SellOrder }) {
       await pay.mutateAsync();
       haptic.notify("success");
     } catch (err) {
+      // The passkey step didn't finish: nothing was paid
+      if (err instanceof PasskeyStepError) {
+        if (!err.cancelled) haptic.notify("error");
+        toast({
+          type: err.cancelled ? undefined : "error",
+          title: err.cancelled ? "Not paid" : "Payment not approved",
+          description: err.message,
+        });
+        return;
+      }
       if (err instanceof FetchyError && isReloginError(err.code)) {
         setPrompt(true);
         return;

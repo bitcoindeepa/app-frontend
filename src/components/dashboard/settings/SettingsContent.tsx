@@ -24,6 +24,7 @@ import { Icon } from "./icons";
 import { InstallButton, useInstallKind } from "@/pwa";
 import { PayoutAccountSection } from "./PayoutAccountSection";
 import { PersonalDetailsSection } from "./PersonalDetailsSection";
+import { PasskeySection } from "./PasskeySection";
 
 type KycStatus = NonNullable<User["kycStatus"]>;
 
@@ -218,6 +219,8 @@ export function SettingsContent({
           />
         </List>
       </Section>
+
+      <PasskeySection />
 
       <PayoutAccountSection />
 

@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
-import { webLoginUrl } from "@/lib/auth";
+import { startWebLogin } from "@/lib/auth";
 import { API_BASE_URL } from "@/lib/constants";
 
 /**
@@ -39,7 +39,7 @@ export default function TelegramLoginButton({
           });
           return;
         }
-        window.location.assign(webLoginUrl(returnTo ?? "/dashboard?tab=wallet", referralCode));
+        startWebLogin(returnTo ?? "/dashboard?tab=wallet", referralCode);
       }}
     >
       {label}

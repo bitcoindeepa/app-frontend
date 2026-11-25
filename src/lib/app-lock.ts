@@ -10,6 +10,13 @@
  *   account change with the prompt on open turned off
  * Unlocking with a passkey (POST /passkey/unlock) unlocks both.
  *
+ * Signing in doesn't ask for the passkey: the page a "Log In with Telegram"
+ * redirect lands on starts unlocked (startWebLogin marks the login in
+ * sessionStorage; this tab reads it once on load). The backend session stays
+ * locked, so anything that needs the passkey (sends, sale payments, bank
+ * accounts, passkey changes) still asks for it; the app locks again as usual
+ * after RELOCK_AFTER_MS in the background or on the next launch.
+ *
  * `bitcoin-deepa-passkey-on` (localStorage) only remembers that this device
  * should lock on launch (a passkey and the prompt on open), so the lock
  * screen shows at once instead of flashing balances while GET /passkey
@@ -19,10 +26,36 @@
 
 export const RELOCK_AFTER_MS = 60_000;
 const HINT_KEY = "bitcoin-deepa-passkey-on";
+const LOGIN_KEY = "bitcoin-deepa-login-started";
+/** A login that started longer ago than this doesn't count (the backend's attempt lasts 10 min) */
+const LOGIN_MAX_AGE_MS = 10 * 60_000;
+
+/** "Log In with Telegram" is about to leave the page: the page it returns to starts unlocked */
+export function markLoginStarted(): void {
+  try {
+    sessionStorage.setItem(LOGIN_KEY, String(Date.now()));
+  } catch {
+    // Storage blocked: the lock shows after the login, as before
+  }
+}
+
+/** Whether this page load is the return from a login this tab started (read once) */
+function takeLoginReturn(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const started = Number(sessionStorage.getItem(LOGIN_KEY));
+    sessionStorage.removeItem(LOGIN_KEY);
+    return started > 0 && Date.now() - started < LOGIN_MAX_AGE_MS;
+  } catch {
+    return false;
+  }
+}
 
 const listeners = new Set<() => void>();
-// Starts locked: opening the app asks for the passkey (when there is one)
-let locked = true;
+// Just signed in: no passkey prompt for this page load (see the top of this file)
+let justLoggedIn = takeLoginReturn();
+// Otherwise starts locked: opening the app asks for the passkey (when there is one)
+let locked = !justLoggedIn;
 
 const emit = () => listeners.forEach((notify) => notify());
 
@@ -35,9 +68,13 @@ export function subscribeAppLock(onChange: () => void): () => void {
 export const getAppLockSnapshot = (): boolean => locked;
 export const getServerAppLockSnapshot = (): boolean => false;
 
+/** Whether the app was opened by a login just now (no prompt until it relocks) */
+export const getJustLoggedInSnapshot = (): boolean => justLoggedIn;
+
 export function lockApp(): void {
-  if (locked) return;
+  if (locked && !justLoggedIn) return;
   locked = true;
+  justLoggedIn = false;
   emit();
 }
 

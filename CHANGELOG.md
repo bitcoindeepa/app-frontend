@@ -13,7 +13,7 @@ its notes. Keep unreleased work under `## [Unreleased]` until then.
 
 - New app icon: white දීප on Satoshi Orange with a slight gradient, for the home screen, PWA install and the
   Apple touch icon. The browser favicon is now just the දීප on a transparent background. The full icon kit (iOS,
-  Android, macOS, Windows, web, source SVGs) is in `design/app-icon/`.
+  Android, macOS, Windows, web, source SVGs) is in `design/app-icon/` (#138).
 
 ## [2.1.0] - 2026-11-25
 

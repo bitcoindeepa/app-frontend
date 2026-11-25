@@ -24,7 +24,7 @@ import { useSheets } from "@/components/dashboard/sheets";
 import { useBotTransactionHistory } from "@/hooks/query/useBotTransactionHistory";
 import { useWalletMetrics } from "@/hooks/query/useWalletMetrics";
 import { FetchyError } from "@/lib/fetchy";
-import { fmtLkrCurrency, fmtSats } from "@/lib/formatters";
+import { availableHint, fmtLkrCurrency, fmtSats } from "@/lib/formatters";
 import { isReloginError, recipientLabel, type P2pRecipient } from "@/lib/p2p";
 import { sendAmountSchema, sendMemoSchema } from "@/lib/validations";
 import { normalizeUsername, USERNAME_RULE } from "@/lib/username";
@@ -60,7 +60,9 @@ export default function SendSheet({
   const router = useRouter();
   const me = useP2pMe(open);
   const send = useP2pSend();
-  const { currentBtcPrice } = useWalletMetrics();
+  // /p2p/me's balance already leaves savings pots out (the bot's spendable
+  // balance); potSats is only to say how much sits in pots.
+  const { currentBtcPrice, potSats } = useWalletMetrics();
   const { transactions: botTxs } = useBotTransactionHistory({ enabled: open });
 
   const [step, setStep] = useState<Step>("form");
@@ -92,7 +94,9 @@ export default function SendSheet({
   const sats = d.sats;
   const parsed =
     d.hasValue && limits
-      ? sendAmountSchema(balance, limits.max_amount, limits.daily_remaining).safeParse(sats)
+      ? sendAmountSchema(balance, limits.max_amount, limits.daily_remaining, potSats).safeParse(
+          sats
+        )
       : null;
   const amountError = parsed && !parsed.success ? parsed.error.issues[0]?.message : undefined;
   const amountOk = !!parsed?.success;
@@ -209,7 +213,7 @@ export default function SendSheet({
     let amountHint: React.ReactNode;
     if (amountError) amountHint = amountError;
     else if (me.isLoading) amountHint = "Checking your balance…";
-    else if (me.data) amountHint = `You have ${fmtSats(balance)} sats`;
+    else if (me.data) amountHint = availableHint(balance, potSats);
     else amountHint = "Your balance couldn't be loaded right now";
 
     const typed = normalizeUsername(to);

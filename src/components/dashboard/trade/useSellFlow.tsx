@@ -22,7 +22,7 @@ import {
 } from "@/hooks/query/useSell";
 import { useWalletMetrics } from "@/hooks/query/useWalletMetrics";
 import { FetchyError } from "@/lib/fetchy";
-import { fmtLkrCurrency, fmtLkrExact, fmtSats } from "@/lib/formatters";
+import { availableHint, fmtLkrCurrency, fmtLkrExact, fmtSats } from "@/lib/formatters";
 import { estimateSellLkr, satsForLkr } from "@/lib/sell";
 import { sellAmountSchema } from "@/lib/validations";
 import { haptic } from "@/platform";
@@ -67,7 +67,13 @@ export function useSellFlow({ kyc, close, open }: FlowArgs): FlowView {
   const [forceExpired, setForceExpired] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
 
-  const { totalSats, balanceAvailable, isLoading: balanceLoading } = useWalletMetrics();
+  // Sats in savings pots can't be collected, so sell up to the spendable balance
+  const {
+    spendableSats,
+    potSats,
+    balanceAvailable,
+    isLoading: balanceLoading,
+  } = useWalletMetrics();
   const { data: price } = useSellPrice(open);
   const { current: bankAccount, verified, isLoading: bankLoading } = useBankAccounts();
   const quoteM = useSellQuote();
@@ -91,11 +97,11 @@ export function useSellFlow({ kyc, close, open }: FlowArgs): FlowView {
   // The balance may still be loading: don't judge the amount against 0
   const parsed =
     d.hasValue && !balanceLoading
-      ? sellAmountSchema(totalSats, price?.minSats, price?.maxSats).safeParse(sats)
+      ? sellAmountSchema(spendableSats, price?.minSats, price?.maxSats, potSats).safeParse(sats)
       : null;
   const error = parsed && !parsed.success ? parsed.error.issues[0]?.message : undefined;
   const amountOk = !!parsed?.success && balanceAvailable;
-  const maxSats = Math.min(totalSats, price?.maxSats ?? totalSats);
+  const maxSats = Math.min(spendableSats, price?.maxSats ?? spendableSats);
 
   const ready = kyc.approved && !!verified;
   // The review needs a quote, KYC and a verified bank (any can change while it's open).
@@ -200,7 +206,7 @@ export function useSellFlow({ kyc, close, open }: FlowArgs): FlowView {
     if (error) hint = error;
     else if (balanceLoading) hint = "Checking your balance…";
     else if (!balanceAvailable) hint = "Your balance couldn't be loaded right now";
-    else hint = `You have ${fmtSats(totalSats)} sats`;
+    else hint = availableHint(spendableSats, potSats);
 
     const kycGate = !kyc.loading && !kyc.approved ? verifyCopy(kyc.status) : null;
     const bankGate = !kycGate && !bankLoading && !verified ? bankRequiredCopy(bankAccount) : null;
@@ -254,9 +260,9 @@ export function useSellFlow({ kyc, close, open }: FlowArgs): FlowView {
         <DualHint invalid={!!error || (!balanceLoading && !balanceAvailable)}>{hint}</DualHint>
         <Presets
           items={[25, 50, 75, 100].map((pc) => {
-            const v = pc === 100 ? maxSats : Math.floor((totalSats * pc) / 100);
+            const v = pc === 100 ? maxSats : Math.floor((spendableSats * pc) / 100);
             return {
-              label: pc === 100 ? (maxSats < totalSats ? "Max" : "All") : `${pc}%`,
+              label: pc === 100 ? (maxSats < spendableSats ? "Max" : "All") : `${pc}%`,
               on: d.active === "sats" && v > 0 && sats === v,
               disabled: balanceLoading || v <= 0,
               pick: () => d.set("sats", v > 0 ? v : ""),

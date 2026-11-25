@@ -290,7 +290,11 @@ export const getIsExistingUserFromStorage = (): boolean =>
   safeStorage("local")?.getItem(EXISTING_USER_KEY) === "true";
 
 export const markIsExistingUserInStorage = () => {
-  safeStorage("local")?.setItem(EXISTING_USER_KEY, "true");
+  try {
+    safeStorage("local")?.setItem(EXISTING_USER_KEY, "true");
+  } catch {
+    // Storage full or refusing writes: only the launch shortcut is lost, the login must go on
+  }
 };
 
 export const clearIsExistingUserInStorage = () => {

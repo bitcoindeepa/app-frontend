@@ -25,6 +25,12 @@ export function fmtSats(sats: number): string {
   return Math.floor(sats).toLocaleString("en-US");
 }
 
+/** "You have 5,500 sats", plus what sits in savings pots (not spendable) when there is some. */
+export function availableHint(spendableSats: number, potSats = 0): string {
+  const have = `You have ${fmtSats(spendableSats)} sats`;
+  return potSats > 0 ? `${have} · ${fmtSats(potSats)} in savings pots` : have;
+}
+
 // Sri Lankan Rupee symbol used in place of the "LKR" code throughout the UI
 export const LKR_SYMBOL = "රු.";
 

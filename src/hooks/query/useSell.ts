@@ -222,6 +222,8 @@ export function useConfirmSell() {
     onSettled: () => {
       // Sats left the wallet (or not): refresh balance, history and orders
       void queryClient.invalidateQueries({ queryKey: queryKeys.walletSummary });
+      // The sell sheet's live spendable balance
+      void queryClient.invalidateQueries({ queryKey: queryKeys.p2pMe });
       void queryClient.invalidateQueries({ queryKey: ["bot-transactions"] });
       void queryClient.invalidateQueries({ queryKey: ["transactions"] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.sellOrders });

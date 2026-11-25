@@ -23,6 +23,8 @@ export function WalletScreen({ news }: { news?: React.ReactNode }) {
     totalLkr,
     totalSats,
     balanceAvailable,
+    potSats,
+    potLkr,
     dcaSpent,
     dcaFees,
     dcaSats,
@@ -46,6 +48,8 @@ export function WalletScreen({ news }: { news?: React.ReactNode }) {
       <TotalValueCard
         totalLkr={totalLkr}
         totalSats={totalSats}
+        potSats={potSats}
+        potLkr={potLkr}
         balanceAvailable={balanceAvailable}
         changePercent={changePercent}
         changeLkr={changeLkr}

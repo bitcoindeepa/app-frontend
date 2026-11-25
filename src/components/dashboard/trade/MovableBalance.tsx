@@ -54,7 +54,10 @@ function BalanceBreakdownSheet({
   const pots = data?.pots ?? [];
   const potSats = data?.pot_balance ?? 0;
   const movable = data?.spendable_balance ?? total;
-  // Whatever is neither movable nor in a pot is held by a payment in progress
+  // spendable_balance is documented as total minus pots, so this is normally
+  // 0 and the row stays hidden. It only shows when the bot also holds back
+  // sats it is sending (it doesn't say so in a field of its own), so the three
+  // rows always add up to the total
   const sending = Math.max(total - movable - potSats, 0);
 
   return (

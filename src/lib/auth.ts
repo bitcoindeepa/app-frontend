@@ -56,7 +56,9 @@ const SIGNED_OUT: SessionSnapshot = { status: "unauthenticated", kind: null, use
 
 let snapshot: SessionSnapshot = LOADING;
 let miniAppToken: string | null = null;
-let webProbe: Promise<void> | null = null;
+let webProbe: Promise<SessionSnapshot> | null = null;
+/** Numbers each probe: only the newest one may update the session */
+let webProbeSeq = 0;
 
 function emit(next: SessionSnapshot) {
   snapshot = next;
@@ -112,9 +114,18 @@ export function resolveSession(platform: "telegram" | "web"): void {
   void refreshWebSession();
 }
 
-/** GET /auth/me with the cookie; deduplicated while one is running */
-export function refreshWebSession(): Promise<void> {
-  webProbe ??= (async () => {
+/**
+ * GET /auth/me with the cookie; resolves to the session it found. Calls made
+ * while one is running share it, unless `fresh`: a probe sent before a login
+ * set the cookie can't see that login, so a caller that just signed in asks
+ * again. Only the newest probe updates the session, so a slower, older one
+ * can't sign the member out after a newer one signed them in.
+ */
+export function refreshWebSession({ fresh = false } = {}): Promise<SessionSnapshot> {
+  if (webProbe && !fresh) return webProbe;
+  const seq = ++webProbeSeq;
+  const probe = (async (): Promise<SessionSnapshot> => {
+    let next: SessionSnapshot = SIGNED_OUT;
     try {
       const response = await fetch(`${API_BASE_URL}/auth/me`, {
         cache: "no-store",
@@ -125,25 +136,25 @@ export function refreshWebSession(): Promise<void> {
           user?: { telegram_id?: string; username?: string | null };
         };
         const id = body.user?.telegram_id;
-        emit(
-          id
-            ? {
-                status: "authenticated",
-                kind: "web",
-                user: { id, username: body.user?.username ?? undefined },
-              }
-            : SIGNED_OUT
-        );
-      } else {
-        emit(SIGNED_OUT);
+        if (id) {
+          next = {
+            status: "authenticated",
+            kind: "web",
+            user: { id, username: body.user?.username ?? undefined },
+          };
+        }
       }
     } catch {
-      emit(SIGNED_OUT);
-    } finally {
-      webProbe = null;
+      // Network error: signed out, as before
     }
+    if (seq === webProbeSeq) emit(next);
+    return next;
   })();
-  return webProbe;
+  webProbe = probe;
+  void probe.finally(() => {
+    if (webProbe === probe) webProbe = null;
+  });
+  return probe;
 }
 
 /** Mini App: exchange the raw launch initData (never initDataUnsafe) for a session */

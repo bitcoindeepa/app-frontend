@@ -45,9 +45,24 @@ export function PasskeyLock() {
       el.inert = true;
       madeInert.push(el);
     }
-    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    // Remember what had focus, to give it back after unlocking
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    previous?.blur();
     root.focus({ preventScroll: true });
-    return () => madeInert.forEach((el) => (el.inert = false));
+    return () => {
+      madeInert.forEach((el) => (el.inert = false));
+      // Back where the member was, if that control is still there and usable;
+      // otherwise focus stays on the page (the browser's default)
+      if (
+        previous &&
+        previous !== document.body &&
+        previous.isConnected &&
+        !previous.closest("[inert]") &&
+        !previous.matches(":disabled")
+      ) {
+        previous.focus({ preventScroll: true });
+      }
+    };
   }, []);
 
   const tryUnlock = (auto: boolean) => {

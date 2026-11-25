@@ -46,11 +46,17 @@ export function usePasskeyStatus() {
   return useQuery({ ...passkeyStatusOptions(), enabled: isAuthed });
 }
 
-/** Every passkey mutation answers with the new status */
+/**
+ * Every passkey mutation answers with the new status. They share one scope,
+ * so TanStack runs them one after another (an add and a remove tapped
+ * together are queued, not refused): each answer is then newer than the one
+ * before, and an older status never overwrites a newer list.
+ */
 function usePasskeyMutation<V>(mutationFn: (vars: V) => Promise<PasskeyStatus>) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn,
+    scope: { id: "passkey" },
     onSuccess: (status) => {
       queryClient.setQueryData(queryKeys.passkey, status);
       writePasskeyHint(status.enabled);

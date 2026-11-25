@@ -37,10 +37,18 @@ export function PasskeyLoginButton({ onError }: { onError: (message: string | nu
       }>("/auth/passkey/options");
       const response = await startAuthentication({ optionsJSON: options });
       await fetchy.post("/auth/passkey/login", { attempt_id, response });
-      haptic.notify("success");
       writePasskeyHint(true);
       unlockApp();
-      await refreshWebSession();
+      // A new probe: one already running was sent before the cookie existed
+      const session = await refreshWebSession({ fresh: true });
+      if (session.status !== "authenticated") {
+        haptic.notify("error");
+        onError(
+          "You're signed in, but your account couldn't be loaded. Reload the page to continue."
+        );
+        return;
+      }
+      haptic.notify("success");
     } catch (error) {
       // Closing the browser's prompt isn't an error worth a red line
       if (!passkeyCancelled(error)) {

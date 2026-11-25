@@ -71,12 +71,20 @@ export function useSellFlow({ kyc, close, open }: FlowArgs): FlowView {
 
   // Sats in savings pots can't be collected, so sell up to the spendable
   // balance. /p2p/me is live (the bot's spendable balance and pots, from one
-  // read); the wallet summary is cached up to ~10 min, so a pot withdrawal
-  // wouldn't show. Fall back to the summary when /p2p/me isn't available (P2P
-  // off, an old login): its numbers are older but agree with each other.
+  // read); the wallet summary can be a few seconds older. Fall back to the
+  // summary when /p2p/me isn't available (P2P off, an old login): its numbers
+  // are older but agree with each other.
   const me = useP2pMe(open);
+  const { refetch: refetchMe } = me;
+  // Read it again on every open: a sale or send paid moments ago (in the bot
+  // chat too) may not have reached the cached value yet
+  useEffect(() => {
+    if (open) void refetchMe();
+  }, [open, refetchMe]);
   const summary = useWalletMetrics();
-  const live = me.data;
+  // Only the latest /p2p/me answer counts: after a failed refetch TanStack
+  // keeps the old data, which can be older than the summary
+  const live = me.isSuccess ? me.data : undefined;
   const spendableSats = live ? live.balance : summary.spendableSats;
   const potSats = live ? (live.pot_balance ?? 0) : summary.potSats;
   const balanceAvailable = live ? true : summary.balanceAvailable;

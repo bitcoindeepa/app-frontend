@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
@@ -61,6 +61,12 @@ export default function SendSheet({
 }) {
   const router = useRouter();
   const me = useP2pMe(open);
+  const { refetch: refetchMe } = me;
+  // Read it again on every open: a sale or send paid moments ago (in the bot
+  // chat too) may not have reached the cached value yet
+  useEffect(() => {
+    if (open) void refetchMe();
+  }, [open, refetchMe]);
   const send = useP2pSend();
   const { currentBtcPrice } = useWalletMetrics();
   const { transactions: botTxs } = useBotTransactionHistory({ enabled: open });

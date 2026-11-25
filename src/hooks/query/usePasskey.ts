@@ -11,7 +11,9 @@ import { useSession } from "@/hooks/useSession";
 import fetchy from "@/lib/fetchy";
 import { queryKeys } from "@/lib/query-keys";
 import { unlockApp, writePasskeyHint } from "@/lib/app-lock";
-import { deviceName } from "@/lib/passkey";
+import { deviceName, PasskeyStepError } from "@/lib/passkey";
+import { usePlatform } from "@/platform";
+import { useCallback } from "react";
 
 export interface PasskeyView {
   id: string;
@@ -58,14 +60,15 @@ function usePasskeyMutation<V>(mutationFn: (vars: V) => Promise<PasskeyStatus>) 
 }
 
 /** Create a passkey on this device (the browser's prompt) and register it */
-export const useAddPasskey = () =>
-  usePasskeyMutation(async () => {
-    const optionsJSON = await fetchy.post<PublicKeyCredentialCreationOptionsJSON>(
-      "/passkey/register/options"
-    );
-    const response = await startRegistration({ optionsJSON });
-    return fetchy.post<PasskeyStatus>("/passkey/register", { response, name: deviceName() });
-  });
+async function registerPasskey(): Promise<PasskeyStatus> {
+  const optionsJSON = await fetchy.post<PublicKeyCredentialCreationOptionsJSON>(
+    "/passkey/register/options"
+  );
+  const response = await startRegistration({ optionsJSON });
+  return fetchy.post<PasskeyStatus>("/passkey/register", { response, name: deviceName() });
+}
+
+export const useAddPasskey = () => usePasskeyMutation(registerPasskey);
 
 /** Unlock this session with one of the member's passkeys */
 export const useUnlockWithPasskey = () =>
@@ -78,3 +81,59 @@ export const useUnlockWithPasskey = () =>
 
 export const useRemovePasskey = () =>
   usePasskeyMutation((id: string) => fetchy.delete<PasskeyStatus>(`/passkey/${id}`));
+
+/** What a passkey approval is for (the backend binds it to exactly this) */
+export type ApprovalAction =
+  | { action: "p2p_send"; to_telegram_id: number; amount: number; idempotency_key: string }
+  | { action: "sell_pay"; order_id: string };
+
+/**
+ * Approve one send or sale payment with a passkey (web/PWA; mandatory
+ * there). Resolves to the headers to send with that request; inside
+ * Telegram (no passkeys) to none. A member without a passkey is asked to
+ * set one up first. Throws PasskeyStepError if a step doesn't complete.
+ */
+export function usePasskeyApproval() {
+  const { kind, confirm } = usePlatform();
+  const queryClient = useQueryClient();
+
+  return useCallback(
+    async (action: ApprovalAction): Promise<Record<string, string>> => {
+      if (kind !== "web") return {};
+      try {
+        let status = await queryClient.fetchQuery(passkeyStatusOptions());
+        if (!status.available) return {};
+        if (!status.enabled) {
+          const ok = await confirm({
+            title: "Set up a passkey",
+            message:
+              "To keep your sats safe, sending and selling in the browser need a passkey: Face ID, fingerprint or your device PIN. It takes a few seconds.",
+            confirmText: "Set up passkey",
+            cancelText: "Not now",
+          });
+          if (!ok) throw new PasskeyStepError("You need a passkey to continue.", true);
+          status = await registerPasskey();
+          queryClient.setQueryData(queryKeys.passkey, status);
+          writePasskeyHint(status.enabled);
+          unlockApp();
+        }
+        const optionsJSON = await fetchy.post<PublicKeyCredentialRequestOptionsJSON>(
+          "/passkey/approve/options",
+          action
+        );
+        const response = await startAuthentication({ optionsJSON });
+        return { "X-Passkey-Assertion": toBase64Url(JSON.stringify(response)) };
+      } catch (error) {
+        throw PasskeyStepError.from(error);
+      }
+    },
+    [kind, confirm, queryClient]
+  );
+}
+
+function toBase64Url(text: string): string {
+  const bytes = new TextEncoder().encode(text);
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}

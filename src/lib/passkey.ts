@@ -40,3 +40,24 @@ export function passkeyErrorMessage(error: unknown): string {
   if (passkeyCancelled(error)) return "Cancelled. Try again when you're ready.";
   return "Your browser couldn't use a passkey here. Try again.";
 }
+
+/**
+ * A passkey step before a send or a sale payment didn't complete (closed,
+ * refused, couldn't run). Nothing was sent to the backend's money route, so
+ * callers show `message` instead of "checking whether it went through".
+ */
+export class PasskeyStepError extends Error {
+  constructor(
+    message: string,
+    /** The user closed the prompt or said no: no need for an error tone */
+    public cancelled: boolean
+  ) {
+    super(message);
+    this.name = "PasskeyStepError";
+  }
+
+  static from(error: unknown): PasskeyStepError {
+    if (error instanceof PasskeyStepError) return error;
+    return new PasskeyStepError(passkeyErrorMessage(error), passkeyCancelled(error));
+  }
+}

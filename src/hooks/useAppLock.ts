@@ -74,5 +74,8 @@ export function useAppLock(): boolean {
   }, [enabled]);
 
   if (status !== "authenticated" || !enabled) return false;
-  return lockedLocally || !data || !data.unlocked;
+  // Before GET /passkey answers, the local state decides: locked on launch,
+  // and not locked right after an unlock here (e.g. signing in with a
+  // passkey), which would otherwise flash the lock and prompt again
+  return lockedLocally || (!!data && !data.unlocked);
 }

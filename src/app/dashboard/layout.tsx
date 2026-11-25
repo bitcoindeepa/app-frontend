@@ -87,7 +87,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div
         inert={appLocked}
         aria-hidden={appLocked || undefined}
-        className="bg-background relative mx-auto flex min-h-dvh w-full max-w-[440px] flex-col overflow-x-clip px-4 transition-colors duration-300"
+        className="bg-background min-h-app relative mx-auto flex w-full max-w-[440px] flex-col overflow-x-clip px-4 transition-colors duration-300"
       >
         <AppHeader />
         <main

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 import { useToast } from "@/components/ui/toast";
@@ -29,6 +30,25 @@ export function PasskeyLock() {
   // True while an automatic prompt is open: show only the logo behind it
   const [prompting, setPrompting] = useState(true);
   const inFlight = useRef(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // Rendered straight into <body> and the only thing usable while it's up:
+  // everything else (the dashboard, and sheets, which portal into <body>
+  // themselves) is made inert, and focus moves here, so a sheet left open
+  // behind the lock can't be operated from the keyboard
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const madeInert: HTMLElement[] = [];
+    for (const el of Array.from(document.body.children)) {
+      if (el === root || !(el instanceof HTMLElement) || el.inert) continue;
+      el.inert = true;
+      madeInert.push(el);
+    }
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    root.focus({ preventScroll: true });
+    return () => madeInert.forEach((el) => (el.inert = false));
+  }, []);
 
   const tryUnlock = (auto: boolean) => {
     if (inFlight.current) return;
@@ -74,22 +94,7 @@ export function PasskeyLock() {
     });
   };
 
-  if (prompting) {
-    return (
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="Unlocking Bitcoin Deepa"
-        className="bg-background fixed inset-0 z-95 flex items-center justify-center"
-      >
-        <div className="relative h-14 w-[200px]">
-          <Logo priority />
-        </div>
-      </div>
-    );
-  }
-
-  return (
+  const locked = (
     <div
       role="dialog"
       aria-modal="true"
@@ -164,6 +169,30 @@ export function PasskeyLock() {
             Log out
           </Button>
         </div>
+      </div>
+    </div>
+  );
+
+  if (typeof document === "undefined") return null;
+  return createPortal(
+    <div ref={rootRef} tabIndex={-1} className="outline-none">
+      {prompting ? <PromptingCover /> : locked}
+    </div>,
+    document.body
+  );
+}
+
+/** Behind the browser's automatic passkey prompt: only the logo */
+function PromptingCover() {
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Unlocking Bitcoin Deepa"
+      className="bg-background fixed inset-0 z-95 flex items-center justify-center"
+    >
+      <div className="relative h-14 w-[200px]">
+        <Logo priority />
       </div>
     </div>
   );

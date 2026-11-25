@@ -38,6 +38,19 @@ export function lockApp(): void {
   emit();
 }
 
+// How many times the backend said this session must unlock (403
+// passkey_required). useAppLock refetches GET /passkey on each: this tab's
+// cached status may be stale (a passkey added from another session).
+let required = 0;
+export const getPasskeyRequiredSnapshot = (): number => required;
+
+/** The backend answered 403 passkey_required (fetchy) */
+export function passkeyRequired(): void {
+  required += 1;
+  locked = true;
+  emit();
+}
+
 export function unlockApp(): void {
   if (!locked) return;
   locked = false;

@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 import { useSession } from "@/hooks/useSession";
 import { usePasskeyStatus } from "@/hooks/query/usePasskey";
 import { usePlatform } from "@/platform";
 import {
   getAppLockSnapshot,
+  getPasskeyRequiredSnapshot,
   getServerAppLockSnapshot,
   lockApp,
   readPasskeyHint,
@@ -38,6 +41,23 @@ export function useAppLock(): boolean {
   }, [data]);
 
   const enabled = kind === "web" && (data ? data.enabled && data.available : hint);
+
+  // Ask the backend again when it says this session must unlock (a 403
+  // passkey_required) or the app relocks after the background: the cached
+  // status may be stale, e.g. a passkey added from another session while
+  // this tab still thinks there's none, and then the lock would never show.
+  const queryClient = useQueryClient();
+  const required = useSyncExternalStore(subscribeAppLock, getPasskeyRequiredSnapshot, () => 0);
+  const wasLocked = useRef(lockedLocally);
+  const seenRequired = useRef(required);
+  useEffect(() => {
+    const relocked = lockedLocally && !wasLocked.current;
+    if (relocked || required !== seenRequired.current) {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.passkey });
+    }
+    wasLocked.current = lockedLocally;
+    seenRequired.current = required;
+  }, [lockedLocally, required, queryClient]);
 
   useEffect(() => {
     if (!enabled) return;

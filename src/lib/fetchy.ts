@@ -19,7 +19,7 @@
 
 import { API_BASE_URL } from "@/lib/constants";
 import { getMiniAppToken, onUnauthorized } from "@/lib/auth";
-import { lockApp } from "@/lib/app-lock";
+import { passkeyRequired } from "@/lib/app-lock";
 
 type FetchOptions = Omit<RequestInit, "headers" | "body"> & {
   headers?: Record<string, string>;
@@ -91,7 +91,7 @@ async function request<T>(
   // The member has a passkey and this web session hasn't unlocked with it
   // (or its unlock ran out): show the lock screen. The caller still gets the error.
   if (backend && response.status === 403 && code === "passkey_required") {
-    lockApp();
+    passkeyRequired();
   }
 
   if (!response.ok) {

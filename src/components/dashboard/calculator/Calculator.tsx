@@ -231,7 +231,7 @@ function RatesCard({
         {updatedAt
           ? ` · updated ${new Date(updatedAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`
           : ""}
-        . Pull down to refresh.
+        . Updates automatically.
       </p>
     </Card>
   );

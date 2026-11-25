@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Satoshi Orange with a slight top-light gradient -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient android:angle="270" android:type="linear"
+        android:startColor="#FFFBA33A" android:centerColor="#FFF8931A" android:endColor="#FFF2821C"/>
+</shape>

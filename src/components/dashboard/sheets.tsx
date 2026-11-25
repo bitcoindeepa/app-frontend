@@ -14,6 +14,8 @@ interface SheetsContextValue {
   openSend: () => void;
   /** The add-bank-account form, straight away (not via settings). */
   openAddBank: () => void;
+  /** LKR / USD / BTC / sats calculator (Total value card). */
+  openCalculator: () => void;
 }
 
 const SheetsContext = createContext<SheetsContextValue | null>(null);
@@ -26,6 +28,7 @@ const AddBankAccountSheet = dynamic(
   () => import("./profile/AddBankAccountSheet").then((m) => m.AddBankAccountSheet),
   { ssr: false }
 );
+const CalculatorSheet = dynamic(() => import("./calculator/CalculatorSheet"), { ssr: false });
 
 /** App-level sheets any dashboard screen can open. Mounted once in the dashboard layout. */
 export function SheetsProvider({ children }: { children: React.ReactNode }) {
@@ -34,6 +37,8 @@ export function SheetsProvider({ children }: { children: React.ReactNode }) {
   const [trade, setTrade] = useState<{ open: boolean; kind: TradeKind; key: number } | null>(null);
   const [send, setSend] = useState<{ open: boolean; key: number } | null>(null);
   const [addBank, setAddBank] = useState<{ open: boolean; key: number } | null>(null);
+  const [calcOpen, setCalcOpen] = useState(false);
+  const [calcMounted, setCalcMounted] = useState(false);
 
   const openSettings = useCallback(() => {
     setSettingsMounted(true);
@@ -51,9 +56,15 @@ export function SheetsProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  // Kept mounted after closing, like Settings: reopening shows the last amount typed.
+  const openCalculator = useCallback(() => {
+    setCalcMounted(true);
+    setCalcOpen(true);
+  }, []);
+
   const value = useMemo(
-    () => ({ openSettings, openTrade, openSend, openAddBank }),
-    [openSettings, openTrade, openSend, openAddBank]
+    () => ({ openSettings, openTrade, openSend, openAddBank, openCalculator }),
+    [openSettings, openTrade, openSend, openAddBank, openCalculator]
   );
 
   return (
@@ -85,6 +96,7 @@ export function SheetsProvider({ children }: { children: React.ReactNode }) {
           onOpenChange={(open) => setAddBank((b) => (b ? { ...b, open } : b))}
         />
       )}
+      {calcMounted && <CalculatorSheet open={calcOpen} onOpenChange={setCalcOpen} />}
     </SheetsContext>
   );
 }

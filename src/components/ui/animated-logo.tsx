@@ -15,6 +15,10 @@ import {
 const DRAW_SECONDS = 4.2;
 
 let hydrated = false;
+// When the first logo hydrated: a stand-in for first paint where the browser
+// has no paint timing (later than the real paint, so the draw-in only replays
+// a little instead of skipping ahead).
+let hydratedAt = 0;
 
 /**
  * Seconds into the draw-in. The animation starts with the server-rendered
@@ -27,11 +31,13 @@ export function useDrawOffset(): number | null {
   const [offset] = useState<number | null>(() => {
     // Server render and hydration: the start (they must match).
     if (typeof window === "undefined" || !hydrated) return 0;
-    const paint = performance.getEntriesByName("first-contentful-paint")[0]?.startTime ?? 0;
+    const paint =
+      performance.getEntriesByName("first-contentful-paint")[0]?.startTime ?? hydratedAt;
     const elapsed = (performance.now() - paint) / 1000;
     return elapsed < DRAW_SECONDS ? elapsed : null;
   });
   useEffect(() => {
+    if (!hydrated) hydratedAt = performance.now();
     hydrated = true;
   }, []);
   return offset;
@@ -75,7 +81,7 @@ function Trace({
  * the eyes, then "bitcoin දීප" is written left to right, and each fills in
  * once traced. Inline SVG, animated with CSS (styles/theme.css, `.yaka`), so it
  * starts with the server-rendered HTML, before hydration. Fills its
- * (positioned, sized) parent like <Logo>.
+ * (positioned, sized) parent.
  */
 export function AnimatedLogo({
   offset,

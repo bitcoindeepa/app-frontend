@@ -31,10 +31,11 @@ export default function TelegramLoginButton({
         // A build without NEXT_PUBLIC_API_BASE_URL (e.g. a Vercel preview with
         // no Preview env vars) would send this to a page of our own: a 404.
         if (!API_BASE_URL) {
+          console.error("Sign-in needs NEXT_PUBLIC_API_BASE_URL; this build has none.");
           toast({
             type: "error",
-            title: "Sign-in isn't set up here",
-            description: "This build has no backend address (NEXT_PUBLIC_API_BASE_URL).",
+            title: "Sign-in is unavailable on this build",
+            description: "Please try again later.",
           });
           return;
         }

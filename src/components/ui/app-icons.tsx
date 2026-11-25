@@ -4,11 +4,7 @@ import { useId, useSyncExternalStore } from "react";
 import Image from "next/image";
 import { Download, Plus } from "lucide-react";
 import { cn } from "cn";
-
-// iPadOS reports itself as a Mac; touch points tell them apart.
-const isApple = () =>
-  /iPhone|iPad|iPod/.test(navigator.userAgent) ||
-  (navigator.userAgent.includes("Mac") && navigator.maxTouchPoints > 1);
+import { isAppleMobile } from "@/lib/device";
 
 const noop = () => () => {};
 
@@ -16,7 +12,7 @@ const noop = () => () => {};
 function useIconShape(): "squircle" | "circle" {
   return useSyncExternalStore(
     noop,
-    () => (isApple() ? "squircle" : "circle"),
+    () => (isAppleMobile() ? "squircle" : "circle"),
     () => "squircle"
   );
 }

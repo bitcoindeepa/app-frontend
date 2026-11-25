@@ -16,35 +16,51 @@ import TelegramLoginButton from "@/components/auth/TelegramLoginButton";
 import { InstallButton } from "@/pwa";
 
 /**
- * Shown when the app is opened outside Telegram (a plain browser tab).
- * "Log In with Telegram" is a redirect through the backend (OIDC), which
- * comes back with a session cookie; useSession then moves the user on. A
- * failed login comes back here with ?login_error=<code>.
- */
-/**
  * "Prefer Telegram?" opens the Mini App itself, not the bot chat. On a phone
  * the tg:// link goes straight into the Telegram app (an installed PWA would
  * otherwise bounce through Safari's t.me page); if Telegram isn't installed
  * the page stays visible, so fall back to the t.me link after a moment. On a
  * computer the t.me link opens in a new tab (Telegram Desktop or Web).
+ *
+ * Safari asks "Open in Telegram?" first, and the page stays visible while it
+ * does, so visibilitychange alone can't tell a slow tap from no Telegram: the
+ * dialog takes focus (blur), and leaving fires pagehide/visibilitychange. Any
+ * of those cancels the fallback, so a slow tap never ends on the t.me page.
+ *
+ * In the installed app the fallback navigates the app itself to t.me; that's
+ * outside the app's scope, so the system shows it in an in-app browser
+ * (intended: Telegram Web is the only way in without the Telegram app).
  */
 function openMiniApp(e: React.MouseEvent<HTMLAnchorElement>, isMobile: boolean) {
   if (!isMobile) return;
   e.preventDefault();
   let left = false;
-  const onHide = () => {
+  const onLeave = () => {
+    left = true;
+  };
+  const onVisibility = () => {
     if (document.visibilityState === "hidden") left = true;
   };
-  document.addEventListener("visibilitychange", onHide);
+  document.addEventListener("visibilitychange", onVisibility);
+  window.addEventListener("pagehide", onLeave);
+  window.addEventListener("blur", onLeave);
   window.location.href = TELEGRAM_MINI_APP_DEEP_LINK;
   window.setTimeout(() => {
-    document.removeEventListener("visibilitychange", onHide);
-    if (!left && document.visibilityState === "visible") {
+    document.removeEventListener("visibilitychange", onVisibility);
+    window.removeEventListener("pagehide", onLeave);
+    window.removeEventListener("blur", onLeave);
+    if (!left && document.visibilityState === "visible" && document.hasFocus()) {
       window.location.href = TELEGRAM_MINI_APP_URL;
     }
-  }, 1500);
+  }, 2500);
 }
 
+/**
+ * Shown when the app is opened outside Telegram (a plain browser tab).
+ * "Log In with Telegram" is a redirect through the backend (OIDC), which
+ * comes back with a session cookie; useSession then moves the user on. A
+ * failed login comes back here with ?login_error=<code>.
+ */
 export default function BrowserLoginScreen() {
   const { isMobileDevice } = usePlatform();
   // Only rendered on the client, once the platform is known

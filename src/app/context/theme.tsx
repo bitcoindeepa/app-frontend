@@ -116,7 +116,9 @@ function writePreference(next: ThemePreference) {
   listeners.forEach((notify) => notify());
 }
 
-// Where the last tap was: a theme switch spreads out from there.
+// Where the last tap was: a theme switch spreads out from there. A key press
+// clears it, so a keyboard switch spreads from the focused control instead of
+// from wherever the pointer last was.
 let lastTap: { x: number; y: number } | null = null;
 if (typeof window !== "undefined") {
   window.addEventListener(
@@ -126,6 +128,24 @@ if (typeof window !== "undefined") {
     },
     { capture: true, passive: true }
   );
+  window.addEventListener(
+    "keydown",
+    () => {
+      lastTap = null;
+    },
+    { capture: true, passive: true }
+  );
+}
+
+/** The spread's origin: the tap, else the focused control's centre, else top centre. */
+function spreadOrigin(): { x: number; y: number } {
+  if (lastTap) return lastTap;
+  const focused = document.activeElement;
+  if (focused instanceof HTMLElement && focused !== document.body) {
+    const r = focused.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }
+  return { x: window.innerWidth / 2, y: 0 };
 }
 
 const SPREAD_MS = 750;
@@ -145,7 +165,7 @@ function switchTheme(next: ColorScheme, apply: () => void) {
     apply();
     return;
   }
-  const { x, y } = lastTap ?? { x: window.innerWidth / 2, y: 0 };
+  const { x, y } = spreadOrigin();
   const radius = Math.hypot(
     Math.max(x, window.innerWidth - x),
     Math.max(y, window.innerHeight - y)
@@ -169,7 +189,8 @@ function switchTheme(next: ColorScheme, apply: () => void) {
       )
     )
     .catch(() => {});
-  transition.finished.finally(() => root.classList.remove("theme-switching"));
+  // finished rejects if the update callback throws: clean up either way.
+  transition.finished.catch(() => {}).finally(() => root.classList.remove("theme-switching"));
 }
 
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
@@ -192,9 +213,9 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
   }, [effectiveTheme]);
 
   // Status bar / Telegram header and bottom bar in the page's colour. Read
-  // from the page itself (after the frame that applies the theme and the
-  // route's surface, e.g. the landing's card colour) rather than hard-coded,
-  // so they can never drift apart.
+  // from <body>'s background (after the frame that applies the theme) rather
+  // than hard-coded, so they can never drift apart. Only the body is read:
+  // a route with its own surface colour won't be picked up.
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
       const color = readPageColor();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import {
   queryOptions,
   useMutation,
@@ -9,6 +9,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useSession } from "@/hooks/useSession";
+import { usePasskeyApproval } from "@/hooks/query/usePasskey";
 import fetchy from "@/lib/fetchy";
 import { queryKeys } from "@/lib/query-keys";
 
@@ -143,7 +144,25 @@ export function useSellOrders(enabled = true) {
 
 export function useSellOrder(id: string) {
   const isAuthed = useAuthed();
-  return useQuery({ ...sellOrderOptions(id), enabled: isAuthed && !!id });
+  const queryClient = useQueryClient();
+  const query = useQuery({ ...sellOrderOptions(id), enabled: isAuthed && !!id });
+  const status = query.data?.status;
+
+  // The sats leave the wallet when the sale leaves COLLECTING (paid in the
+  // app or in the bot chat), seconds after confirm or pay refreshed the
+  // balances: refresh them again then, so the next sale or send isn't capped
+  // by the balance from before the payment
+  const previous = useRef(status);
+  useEffect(() => {
+    const was = previous.current;
+    previous.current = status;
+    if (was === "COLLECTING" && status && status !== "COLLECTING") {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.p2pMe });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.walletSummary });
+    }
+  }, [status, queryClient]);
+
+  return query;
 }
 
 /**
@@ -168,6 +187,8 @@ export function useRefreshWhenSalesSettle(sales: SellOrder[]) {
     if (!settled) return;
     void queryClient.invalidateQueries({ queryKey: ["transactions"] });
     void queryClient.invalidateQueries({ queryKey: queryKeys.walletSummary });
+    // The sell and send sheets' live spendable balance
+    void queryClient.invalidateQueries({ queryKey: queryKeys.p2pMe });
   }, [settled, queryClient]);
 }
 
@@ -183,6 +204,8 @@ function useInvalidateAfterSale() {
   return (order?: SellOrder) => {
     if (order) queryClient.setQueryData(queryKeys.sellOrder(order.id), order);
     void queryClient.invalidateQueries({ queryKey: queryKeys.walletSummary });
+    // The sell and send sheets' live spendable balance
+    void queryClient.invalidateQueries({ queryKey: queryKeys.p2pMe });
     void queryClient.invalidateQueries({ queryKey: ["bot-transactions"] });
     // The sale is in the member's history (/transaction/list)
     void queryClient.invalidateQueries({ queryKey: ["transactions"] });
@@ -196,8 +219,13 @@ function useInvalidateAfterSale() {
  */
 export function usePaySell(id: string) {
   const refresh = useInvalidateAfterSale();
+  const approve = usePasskeyApproval();
   return useMutation({
-    mutationFn: () => fetchy.post<SellOrder>(`/sell/orders/${id}/pay`),
+    // On the web each payment is approved with a passkey first (mandatory)
+    mutationFn: async () => {
+      const headers = await approve({ action: "sell_pay", order_id: id });
+      return fetchy.post<SellOrder>(`/sell/orders/${id}/pay`, undefined, { headers });
+    },
     onSuccess: (order) => refresh(order),
     onError: () => refresh(),
   });
@@ -222,6 +250,8 @@ export function useConfirmSell() {
     onSettled: () => {
       // Sats left the wallet (or not): refresh balance, history and orders
       void queryClient.invalidateQueries({ queryKey: queryKeys.walletSummary });
+      // The sell sheet's live spendable balance
+      void queryClient.invalidateQueries({ queryKey: queryKeys.p2pMe });
       void queryClient.invalidateQueries({ queryKey: ["bot-transactions"] });
       void queryClient.invalidateQueries({ queryKey: ["transactions"] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.sellOrders });

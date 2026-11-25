@@ -12,6 +12,10 @@ import { fmtBtc, fmtLkr, fmtSats, fmtUsd, LKR_SYMBOL, maskDigits } from "@/lib/f
 export interface TotalValueCardProps {
   totalLkr: number;
   totalSats: number;
+  /** Sats in savings pots: part of totalSats, but they can't be sold or sent */
+  potSats?: number;
+  /** potSats in LKR, at the same rate as totalLkr */
+  potLkr?: number;
   /** False when the wallet balance couldn't be fetched: show that instead of a fake 0 */
   balanceAvailable?: boolean;
   changePercent: number;
@@ -28,6 +32,8 @@ export interface TotalValueCardProps {
 export function TotalValueCard({
   totalLkr,
   totalSats,
+  potSats = 0,
+  potLkr = 0,
   balanceAvailable = true,
   changePercent,
   changeLkr,
@@ -144,6 +150,15 @@ export function TotalValueCard({
             <span aria-hidden className="size-[2.2px] rounded-full bg-current" />
             {mask(primary === "sats" ? `≈ ${fiat(totalLkr)}` : satsText)}
           </p>
+          {potSats > 0 && (
+            // Included in the total above; locked until withdrawn from the pot in the bot
+            <p className="num flex items-center gap-1.5 text-[12px] leading-4 text-white/80">
+              <LockIcon />
+              {mask(`${fmtSats(potSats)} sats`)} in savings pots
+              <span aria-hidden className="size-[2.2px] rounded-full bg-current" />
+              {mask(`≈ ${fiat(potLkr)}`)}
+            </p>
+          )}
           {totalSats > 0 ? (
             <span
               className={cn(
@@ -191,6 +206,24 @@ function fiatTicker(lkr: number, usdRate: number | undefined) {
   return usd < 100
     ? { value: usd * 100, prefix: "≈\u00a0$", format: (c: number) => (c / 100).toFixed(2) }
     : { value: usd, prefix: "≈\u00a0$", format: (n: number) => n.toLocaleString("en-US") };
+}
+
+function LockIcon() {
+  return (
+    <svg
+      className="size-3.5"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <rect x="4" y="11" width="16" height="10" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </svg>
+  );
 }
 
 function EyeIcon({ off }: { off: boolean }) {

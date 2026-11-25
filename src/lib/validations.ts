@@ -86,18 +86,27 @@ export type BankAccountFormData = z.output<typeof bankAccountSchema>;
 /** Used until /sell/price (which returns the backend's minimum) has loaded. */
 export const DEFAULT_SELL_MIN_SATS = 1000;
 
+/** Over the spendable balance: point at the pots when they're why. */
+const overBalanceMessage = (balanceSats: number, potSats: number) =>
+  potSats > 0
+    ? `You can use ${balanceSats.toLocaleString("en-US")} sats. ${potSats.toLocaleString("en-US")} are in savings pots`
+    : "That's more than your balance";
+
 /** Sats to sell: a whole number between the minimum and the balance. */
 export const sellAmountSchema = (
+  /** Spendable sats: the balance minus savings pots */
   balanceSats: number,
   minSats = DEFAULT_SELL_MIN_SATS,
-  maxSats = Number.POSITIVE_INFINITY
+  maxSats = Number.POSITIVE_INFINITY,
+  /** Sats in savings pots, to say why an amount the total would cover is refused */
+  potSats = 0
 ) =>
   z
     .number({ message: "Enter an amount in sats" })
     .int("Use whole sats")
     .min(minSats, `Minimum is ${minSats.toLocaleString("en-US")} sats`)
     .max(maxSats, `Maximum per sale is ${maxSats.toLocaleString("en-US")} sats`)
-    .max(balanceSats, "That's more than your balance");
+    .max(balanceSats, overBalanceMessage(balanceSats, potSats));
 
 /** One-time buy amount in whole LKR; limits come from GET /buy/price. */
 export const buyAmountSchema = (minLkr = 100, maxLkr = Number.POSITIVE_INFINITY) =>
@@ -108,14 +117,21 @@ export const buyAmountSchema = (minLkr = 100, maxLkr = Number.POSITIVE_INFINITY)
     .max(maxLkr, `Maximum per buy is ${maxLkr.toLocaleString("en-US")} LKR`);
 
 /** P2P send amount; limits come from GET /p2p/me (the bot's). */
-export const sendAmountSchema = (balanceSats: number, maxSats: number, dailyRemaining: number) =>
+export const sendAmountSchema = (
+  /** The bot's spendable balance (savings pots already left out) */
+  balanceSats: number,
+  maxSats: number,
+  dailyRemaining: number,
+  /** Sats in savings pots, to say why an amount the total would cover is refused */
+  potSats = 0
+) =>
   z
     .number({ message: "Enter an amount in sats" })
     .int("Use whole sats")
     .min(1, "Enter an amount in sats")
     .max(maxSats, `Maximum per send is ${maxSats.toLocaleString("en-US")} sats`)
     .max(dailyRemaining, `You can send ${dailyRemaining.toLocaleString("en-US")} more sats today`)
-    .max(balanceSats, "That's more than your balance");
+    .max(balanceSats, overBalanceMessage(balanceSats, potSats));
 
 /** @username, username or a numeric Telegram ID */
 export const sendRecipientSchema = z

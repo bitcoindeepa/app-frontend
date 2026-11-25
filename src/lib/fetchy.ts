@@ -9,6 +9,8 @@
  * - A 401 from the backend ends that session (useSession): web users go back
  *   to sign-in, the Mini App signs in again from initData.
  * - Sends/parses JSON; empty responses (e.g. 204) resolve to undefined.
+ * - A 403 passkey_required locks the app (lib/app-lock.ts): the lock screen
+ *   asks for the passkey, then the user can retry.
  * - Throws FetchyError (message + HTTP status) on non-OK responses, so TanStack
  *   Query sees them as errors.
  * - Bypasses the browser HTTP cache — TanStack Query owns caching.
@@ -17,6 +19,7 @@
 
 import { API_BASE_URL } from "@/lib/constants";
 import { getMiniAppToken, onUnauthorized } from "@/lib/auth";
+import { passkeyRequired } from "@/lib/app-lock";
 
 type FetchOptions = Omit<RequestInit, "headers" | "body"> & {
   headers?: Record<string, string>;
@@ -84,6 +87,11 @@ async function request<T>(
   const code = (data as { code?: unknown } | undefined)?.code;
   if (backend && response.status === 401 && code !== "relogin_required") {
     onUnauthorized(token);
+  }
+  // The member has a passkey and this web session hasn't unlocked with it
+  // (or its unlock ran out): show the lock screen. The caller still gets the error.
+  if (backend && response.status === 403 && code === "passkey_required") {
+    passkeyRequired();
   }
 
   if (!response.ok) {

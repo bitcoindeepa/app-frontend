@@ -10,7 +10,9 @@ export const walletSummaryOptions = () =>
   queryOptions({
     queryKey: queryKeys.walletSummary,
     queryFn: () => fetchy.get<DCSummary>("/transaction/dca-summary"),
-    staleTime: 1000 * 60 * 5,
+    // Matches the backend's 10 s cache: the wallet balance and savings pots
+    // change in the bot, so reopening or refocusing the app should refetch
+    staleTime: 10_000,
   });
 
 export function useWalletSummary() {

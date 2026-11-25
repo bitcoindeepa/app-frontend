@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "@/hooks/useSession";
+import { usePasskeyApproval } from "@/hooks/query/usePasskey";
 import fetchy, { FetchyError } from "@/lib/fetchy";
 import { queryKeys } from "@/lib/query-keys";
 import { p2pPollInterval, type P2pMe, type P2pRecipient, type P2pTransfer } from "@/lib/p2p";
@@ -80,10 +81,20 @@ export function useRecipient(input: string) {
   return { username, valid, settled, ...query };
 }
 
+/** Send sats. On the web each send is approved with a passkey first (mandatory). */
 export function useP2pSend() {
   const queryClient = useQueryClient();
+  const approve = usePasskeyApproval();
   return useMutation({
-    mutationFn: (input: P2pSendInput) => fetchy.post<P2pTransfer>("/p2p/send", input),
+    mutationFn: async (input: P2pSendInput) => {
+      const headers = await approve({
+        action: "p2p_send",
+        to_telegram_id: input.to_telegram_id,
+        amount: input.amount,
+        idempotency_key: input.idempotency_key,
+      });
+      return fetchy.post<P2pTransfer>("/p2p/send", input, { headers });
+    },
     onSuccess: (transfer) => {
       queryClient.setQueryData(queryKeys.p2pTransfer(transfer.id), transfer);
     },

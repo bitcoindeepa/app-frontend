@@ -57,6 +57,8 @@ Rules worth knowing:
 ## Commits and PRs
 
 - Branch from `dev` and target `dev` with your PR. `main` is the release branch.
+- Releases: bump `version` in `package.json` and add its section to [CHANGELOG.md](CHANGELOG.md) in the `dev` → `main` PR.
+  Merging tags and publishes the GitHub release automatically.
 - Use [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`, `ci:`, …
 - Keep PRs focused. Add screenshots for UI changes, ideally in both Telegram and a browser, light and dark.
 

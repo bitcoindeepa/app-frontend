@@ -10,7 +10,7 @@ import {
 import { useSession } from "@/hooks/useSession";
 import fetchy from "@/lib/fetchy";
 import { queryKeys } from "@/lib/query-keys";
-import { unlockApp, writePasskeyHint } from "@/lib/app-lock";
+import { locksOnOpen, unlockApp, writePasskeyHint } from "@/lib/app-lock";
 import { deviceName, PasskeyStepError } from "@/lib/passkey";
 import { usePlatform } from "@/platform";
 import { useCallback } from "react";
@@ -30,6 +30,11 @@ export interface PasskeyStatus {
   unlocked: boolean;
   /** Passkeys work here: a web session (never inside Telegram) */
   available: boolean;
+  /**
+   * Ask for the passkey when the app opens (the member's setting, on by
+   * default; false without a passkey). Sends and sale payments ask either way.
+   */
+  lock_on_open: boolean;
   passkeys: PasskeyView[];
 }
 
@@ -59,7 +64,7 @@ function usePasskeyMutation<V>(mutationFn: (vars: V) => Promise<PasskeyStatus>) 
     scope: { id: "passkey" },
     onSuccess: (status) => {
       queryClient.setQueryData(queryKeys.passkey, status);
-      writePasskeyHint(status.enabled);
+      writePasskeyHint(locksOnOpen(status));
       if (status.unlocked) unlockApp();
     },
   });
@@ -76,14 +81,31 @@ async function registerPasskey(): Promise<PasskeyStatus> {
 
 export const useAddPasskey = () => usePasskeyMutation(registerPasskey);
 
+/** The browser's passkey prompt, then POST /passkey/unlock */
+async function unlockSession(): Promise<PasskeyStatus> {
+  const optionsJSON =
+    await fetchy.post<PublicKeyCredentialRequestOptionsJSON>("/passkey/unlock/options");
+  const response = await startAuthentication({ optionsJSON });
+  return fetchy.post<PasskeyStatus>("/passkey/unlock", { response });
+}
+
 /** Unlock this session with one of the member's passkeys */
-export const useUnlockWithPasskey = () =>
-  usePasskeyMutation(async () => {
-    const optionsJSON =
-      await fetchy.post<PublicKeyCredentialRequestOptionsJSON>("/passkey/unlock/options");
-    const response = await startAuthentication({ optionsJSON });
-    return fetchy.post<PasskeyStatus>("/passkey/unlock", { response });
+export const useUnlockWithPasskey = () => usePasskeyMutation(unlockSession);
+
+/**
+ * Ask (or not) for the passkey when the app opens. Turning it off needs this
+ * session unlocked, so it unlocks first when it isn't.
+ */
+export function useSetLockOnOpen() {
+  const queryClient = useQueryClient();
+  return usePasskeyMutation(async (lockOnOpen: boolean) => {
+    if (!lockOnOpen) {
+      const current = await queryClient.fetchQuery(passkeyStatusOptions());
+      if (!current.unlocked) await unlockSession();
+    }
+    return fetchy.patch<PasskeyStatus>("/passkey/settings", { lock_on_open: lockOnOpen });
   });
+}
 
 export const useRemovePasskey = () =>
   usePasskeyMutation((id: string) => fetchy.delete<PasskeyStatus>(`/passkey/${id}`));
@@ -120,7 +142,7 @@ export function usePasskeyApproval() {
           if (!ok) throw new PasskeyStepError("You need a passkey to continue.", true);
           status = await registerPasskey();
           queryClient.setQueryData(queryKeys.passkey, status);
-          writePasskeyHint(status.enabled);
+          writePasskeyHint(locksOnOpen(status));
           unlockApp();
         }
         const optionsJSON = await fetchy.post<PublicKeyCredentialRequestOptionsJSON>(

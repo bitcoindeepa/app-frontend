@@ -119,6 +119,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 const PUSHED_PAGES = [
   "/dashboard/buy",
+  "/dashboard/calculator",
   "/dashboard/sell/",
   "/dashboard/send",
   "/dashboard/profile",

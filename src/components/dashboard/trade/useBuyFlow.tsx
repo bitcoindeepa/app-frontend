@@ -7,7 +7,7 @@ import { KeyValueList } from "@/components/ui/section";
 import { useBuyPrice, useCreateBuyLink } from "@/hooks/query/useBuy";
 import { estimateBuy } from "@/lib/buy";
 import { FetchyError } from "@/lib/fetchy";
-import { fmtLkrCurrency, fmtLkrExact, fmtSats } from "@/lib/formatters";
+import { fmtLkrCurrency, fmtLkrExact, fmtLkrPreset, fmtSats } from "@/lib/formatters";
 import { usePayHereRedirect } from "@/lib/hooks";
 import { buyAmountSchema } from "@/lib/validations";
 import { haptic } from "@/platform";
@@ -187,7 +187,7 @@ export function useBuyFlow({ kyc, close, open }: FlowArgs): FlowView {
         <Presets
           items={PRESETS.filter((v) => !price || (v >= price.minLkr && v <= price.maxLkr)).map(
             (v) => ({
-              label: fmtLkrCurrency(v),
+              label: fmtLkrPreset(v),
               on: d.active === "lkr" && lkr === v,
               pick: () => {
                 d.set("lkr", v);

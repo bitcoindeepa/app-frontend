@@ -30,6 +30,11 @@ export function fmtLkrCurrency(value: number): string {
   return `${LKR_SYMBOL} ${fmtLkr(value)}`;
 }
 
+// Whole-rupee preset chip label, no cents (e.g. 25000 -> "රු. 25,000")
+export function fmtLkrPreset(value: number): string {
+  return `${LKR_SYMBOL} ${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+}
+
 // Compact LKR amount with the රු. symbol (e.g. 29500000 -> "රු. 29.5M")
 export function fmtLkrCurrencyCompact(value: number): string {
   return `${LKR_SYMBOL} ${fmtPriceCompact(value)}`;

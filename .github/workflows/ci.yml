@@ -36,6 +36,9 @@ jobs:
       - name: Type check
         run: bunx tsc --noEmit
 
+      - name: Test
+        run: bun run test
+
       - name: Format
         run: bunx prettier --check .
 

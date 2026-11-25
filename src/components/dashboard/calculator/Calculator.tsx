@@ -6,7 +6,6 @@ import { BtcCoin } from "@/components/ui/btc-coin";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Presets } from "@/components/dashboard/trade/DualAmount";
-import { haptic } from "@/platform";
 import { LKR_SYMBOL } from "@/lib/formatters";
 import {
   cleanAmount,
@@ -20,7 +19,7 @@ import { useCalculatorRates } from "./useCalculatorRates";
 
 const LKR_PRESETS = [1_000, 5_000, 10_000, 25_000];
 
-/** LKR, USD and BTC boxes: type in any one and the others follow the app's price. */
+/** LKR, USD, BTC and sats boxes: type in any one and the others follow the app's price. */
 export function Calculator() {
   const id = useId();
   const { rates, usdLkr, updatedAt, isLoading, isError, isFetching, refetch } =
@@ -29,8 +28,6 @@ export function Calculator() {
     unit: "lkr",
     raw: "10000",
   });
-  // The BTC box shows BTC or sats (tap its unit to switch)
-  const [btcUnit, setBtcUnit] = useState<"btc" | "sats">("btc");
 
   const amount = input.raw === "" ? null : Number(input.raw);
   const values = rates && amount !== null ? convert(amount, input.unit, rates) : null;
@@ -39,16 +36,6 @@ export function Calculator() {
     if (unit === input.unit) return groupTyped(input.raw);
     const v = values?.[unit];
     return v === null || v === undefined ? "" : fmtCalc(v, unit);
-  };
-
-  const toggleBtcUnit = () => {
-    haptic.select();
-    const next = btcUnit === "btc" ? "sats" : "btc";
-    setBtcUnit(next);
-    // Typed in BTC/sats: keep the same amount, shown in the other unit
-    if ((input.unit === "btc" || input.unit === "sats") && values) {
-      setInput({ unit: next, raw: cleanAmount(String(values[next] ?? ""), next) });
-    }
   };
 
   if (isLoading) return <CalculatorSkeleton />;
@@ -99,25 +86,21 @@ export function Calculator() {
           />
           <AmountBox
             id={`${id}-btc`}
-            label={btcUnit === "btc" ? "Bitcoin" : "Satoshis"}
-            unit={btcUnit}
-            active={input.unit === btcUnit}
-            value={text(btcUnit)}
-            onChange={(raw) => setInput({ unit: btcUnit, raw: cleanAmount(raw, btcUnit) })}
-            pill={
-              <button
-                type="button"
-                onClick={toggleBtcUnit}
-                aria-label={`Show ${btcUnit === "btc" ? "sats" : "BTC"} instead`}
-                className="press shrink-0 rounded-full border-0 bg-transparent p-0"
-              >
-                <UnitPill
-                  icon={<BtcCoin className="size-7" />}
-                  code={btcUnit === "btc" ? "BTC" : "sats"}
-                  swap
-                />
-              </button>
-            }
+            label="Bitcoin"
+            unit="btc"
+            active={input.unit === "btc"}
+            value={text("btc")}
+            onChange={(raw) => setInput({ unit: "btc", raw: cleanAmount(raw, "btc") })}
+            pill={<UnitPill icon={<BtcCoin className="size-7" />} code="BTC" />}
+          />
+          <AmountBox
+            id={`${id}-sats`}
+            label="Satoshis"
+            unit="sats"
+            active={input.unit === "sats"}
+            value={text("sats")}
+            onChange={(raw) => setInput({ unit: "sats", raw: cleanAmount(raw, "sats") })}
+            pill={<UnitPill icon={<BtcCoin className="size-7" />} code="sats" />}
           />
         </div>
         <Presets
@@ -202,25 +185,11 @@ function FiatCoin({ children, className }: { children: React.ReactNode; classNam
   );
 }
 
-function UnitPill({ icon, code, swap }: { icon: React.ReactNode; code: string; swap?: boolean }) {
+function UnitPill({ icon, code }: { icon: React.ReactNode; code: string }) {
   return (
     <span className="bg-card inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full pr-3 pl-1 text-[14px] font-bold">
       {icon}
       {code}
-      {swap && (
-        <svg
-          className="text-ink3 -mr-0.5 size-3.5"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden
-        >
-          <path d="M7 4v16M3 8l4-4 4 4M17 20V4M21 16l-4 4-4-4" />
-        </svg>
-      )}
     </span>
   );
 }

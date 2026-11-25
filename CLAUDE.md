@@ -19,6 +19,7 @@ bun (`bun.lockb` committed). `bun dev` / `bun start` (port 3347), `bun run build
 - Each login links the bot wallet (backend calls the bot's `/api/v1/init`). Wallet calls (`/p2p/*`, `/sell/orders/:id/pay`) send no Telegram credential. `403 relogin_required` opens `ReloginPrompt` and must never sign the user out (401 does).
 - Logout / "Log out of all devices" throw unless the backend confirms (settings shows a toast).
 - `bitcoin-deepa-is-existing-user` (localStorage) is only a UX flag for the launch redirect. The old `bitcoin-deepa-auth-token` is deleted on load.
+- **Passkey lock** (optional, web/PWA only; backend `/passkey`, `@simplewebauthn/browser`): `useAppLock` puts `PasskeyLock` over the dashboard on every launch, after 60 s in the background, and when fetchy sees `403 passkey_required` (`lib/app-lock.ts`); the lock asks for the passkey at once and on each refocus, with a button for browsers that want a tap. Unlocking also unlocks the session on the backend (money-moving routes need that). Never in the Telegram Mini App: its webview can't run WebAuthn for our domain, so settings there point to Telegram's own passcode lock. `bitcoin-deepa-passkey-on` (localStorage) only lets the lock show before `GET /passkey` answers. Settings › App lock (`PasskeySection`) adds/removes passkeys. Failed passkeys are 400/403, never 401; lost passkeys are removed by support.
 - Protected pages live under `src/app/dashboard/` (gated by `useAuthGuard` in its layout). `src/app/verification/` (KYC) is outside it.
 
 ## State and structure

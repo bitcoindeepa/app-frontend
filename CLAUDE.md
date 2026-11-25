@@ -19,6 +19,7 @@ bun (`bun.lockb` committed). `bun dev` / `bun start` (port 3347), `bun run build
 - Each login links the bot wallet (backend calls the bot's `/api/v1/init`). Wallet calls (`/p2p/*`, `/sell/orders/:id/pay`) send no Telegram credential. `403 relogin_required` opens `ReloginPrompt` and must never sign the user out (401 does).
 - Logout / "Log out of all devices" throw unless the backend confirms (settings shows a toast).
 - `bitcoin-deepa-is-existing-user` (localStorage) is only a UX flag for the launch redirect. The old `bitcoin-deepa-auth-token` is deleted on load.
+- **App passcode** (optional, 6 digits; backend `/passcode`): `useAppLock` puts `PasscodeLock` over the dashboard on every launch, after 60 s in the background, and when fetchy sees `403 passcode_required` (`lib/app-lock.ts`). Entering it unlocks the session on the backend too (money-moving routes need that). `bitcoin-deepa-passcode-on` (localStorage) only lets the lock show before `GET /passcode` answers. Settings has the on/off switch and Change (`PasscodeSheet`). Wrong passcodes are 400/429, never 401; no in-app reset (support removes it).
 - Protected pages live under `src/app/dashboard/` (gated by `useAuthGuard` in its layout). `src/app/verification/` (KYC) is outside it.
 
 ## State and structure

@@ -24,6 +24,8 @@ import { Icon } from "./icons";
 import { InstallButton, useInstallKind } from "@/pwa";
 import { PayoutAccountSection } from "./PayoutAccountSection";
 import { PersonalDetailsSection } from "./PersonalDetailsSection";
+import { PasscodeSheet, type PasscodeSheetMode } from "./PasscodeSheet";
+import { usePasscodeStatus } from "@/hooks/query/usePasscode";
 
 type KycStatus = NonNullable<User["kycStatus"]>;
 
@@ -128,6 +130,44 @@ function UsernameRow() {
   );
 }
 
+/** App passcode: the switch turns it on or off (both through the sheet), plus Change */
+function PasscodeRows() {
+  const { data } = usePasscodeStatus();
+  const [mode, setMode] = useState<PasscodeSheetMode>("set");
+  const [open, setOpen] = useState(false);
+  const enabled = data?.enabled ?? false;
+  const start = (next: PasscodeSheetMode) => {
+    haptic.impact("light");
+    setMode(next);
+    setOpen(true);
+  };
+  return (
+    <>
+      <ListRow
+        icon={<Icon name="lock" className="text-ink2" />}
+        title="App passcode"
+        subtitle={enabled ? "Asked when you open the app" : "Lock the app with 6 digits"}
+        after={
+          <Switch
+            label="App passcode"
+            checked={enabled}
+            disabled={!data}
+            onCheckedChange={(on) => start(on ? "set" : "disable")}
+          />
+        }
+      />
+      {enabled && (
+        <ListRow
+          onClick={() => start("change")}
+          icon={<Icon name="lock" className="text-ink2" />}
+          title="Change passcode"
+        />
+      )}
+      <PasscodeSheet key={mode} mode={mode} open={open} onOpenChange={setOpen} />
+    </>
+  );
+}
+
 function IdentityRow({ onVerify }: { onVerify: () => void }) {
   const { kycStatus } = useUser();
   const status = kycStatus ?? "NOT_STARTED";
@@ -210,6 +250,7 @@ export function SettingsContent({
         <List>
           <IdentityRow onVerify={() => go("/verification")} />
           <UsernameRow />
+          <PasscodeRows />
           <ListRow
             icon={<Icon name="eye" className="text-ink2" />}
             title="Hide balances"

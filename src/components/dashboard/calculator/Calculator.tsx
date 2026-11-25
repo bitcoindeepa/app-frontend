@@ -6,7 +6,7 @@ import { BtcCoin } from "@/components/ui/btc-coin";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Presets } from "@/components/dashboard/trade/DualAmount";
-import { fmtLkrCurrency, LKR_SYMBOL } from "@/lib/formatters";
+import { fmtLkrPreset, LKR_SYMBOL } from "@/lib/formatters";
 import {
   cleanAmount,
   convert,
@@ -105,7 +105,7 @@ export function Calculator() {
         </div>
         <Presets
           items={LKR_PRESETS.map((lkr) => ({
-            label: fmtLkrCurrency(lkr),
+            label: fmtLkrPreset(lkr),
             on: input.unit === "lkr" && Number(input.raw) === lkr,
             pick: () => setInput({ unit: "lkr", raw: String(lkr) }),
           }))}

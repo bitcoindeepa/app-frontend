@@ -35,7 +35,7 @@ bun (`bun.lockb` committed). `bun dev` / `bun start` (port 3347), `bun run build
 ## Telegram / PWA gotchas
 
 - Mobile-first, `max-w-md` single column.
-- Rupees: every displayed LKR value has two decimals (`fmtLkr` / `fmtLkrCurrency` / `fmtLkrExact` in `src/lib/formatters.ts`); don't `Math.round` before formatting. Only typed amount inputs stay whole, and compact chart/price labels (`fmtLkrCurrencyCompact`, `29.5M`) stay abbreviated.
+- Rupees: every displayed LKR value has two decimals (`fmtLkr` / `fmtLkrCurrency` / `fmtLkrExact` in `src/lib/formatters.ts`); don't `Math.round` before formatting. Only typed amount inputs and whole-rupee preset chips (`fmtLkrPreset`, calculator and Buy) stay whole, and compact chart/price labels (`fmtLkrCurrencyCompact`, `29.5M`) stay abbreviated.
 - Send confirms with a normal button (no press-and-hold); Sell still uses `HoldButton`.
 - Fast launch (`src/lib/launch-redirect.ts`): a `<head>` script sends returning members straight to `/dashboard`; `web_app_ready` is sent from the end of `<body>`.
 - `next.config.mjs` forces `Cache-Control: no-store` on non-static routes (Telegram Desktop caches stale HTML): don't remove. `allowedDevOrigins` allows `*.sats.day` / `*.ngrok-free.app` tunnels.

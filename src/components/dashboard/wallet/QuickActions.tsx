@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "cn";
+import { useRouter } from "next/navigation";
 import { haptic } from "@/platform";
 import { useSheets } from "@/components/dashboard/sheets";
 
@@ -14,14 +15,21 @@ const ICONS = {
     </>
   ),
   request: <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />,
+  calculator: (
+    <>
+      <rect x="5" y="3" width="14" height="18" rx="2.5" />
+      <path d="M8.5 7.5h7M9 12h.01M12 12h.01M15 12h.01M9 15.5h.01M12 15.5h.01M15 15.5v.01M9 18h.01M12 18h.01M15 18h.01" />
+    </>
+  ),
 };
 
-/** Buy / Sell / Send / Request tiles under the Total value card. */
+/** Buy / Sell / Send / Calculator / Request tiles under the Total value card. */
 export function QuickActions() {
   const { openTrade, openSend } = useSheets();
+  const router = useRouter();
 
   return (
-    <div role="group" aria-label="Quick actions" className="-mt-2 grid grid-cols-4 gap-2">
+    <div role="group" aria-label="Quick actions" className="-mt-2 grid grid-cols-5 gap-2">
       <Action
         icon={ICONS.buy}
         label="Buy"
@@ -44,6 +52,14 @@ export function QuickActions() {
         onClick={() => {
           haptic.impact("light");
           openSend();
+        }}
+      />
+      <Action
+        icon={ICONS.calculator}
+        label="Convert"
+        onClick={() => {
+          haptic.impact("light");
+          router.push("/dashboard/calculator");
         }}
       />
       {/* No backend for requesting sats yet. */}

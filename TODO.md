@@ -41,7 +41,9 @@ Remaining:
 - [x] Vitest, with tests for the logic in `src/lib` (amounts, fees, formatting, validation, activity)
 - [x] Tests for `fetchy` (401 and 403 handling), `auth`, `app-lock`, the launch scripts and the service worker update
 - [x] Tests for the platform layer and the session, app lock, passkey, send and sell hooks (Testing Library + MSW)
-- [ ] Tests for the screens: send, buy and sell, login, passkey lock, settings
+- [x] Tests for the screens: login, passkey lock, passkey settings, send, buy and sell
+- [ ] Tests for the rest: wallet, activity, plans, KYC, payout account, username and avatar sheets
+- [ ] A small Playwright suite for what jsdom can't show: the news pages (server components), real passkey prompts, response headers
 - [ ] Dev mock login: needs a dev-only backend endpoint, decide later
 - [ ] Later: httpOnly cookie session instead of the localStorage token (backend change)
 - [ ] Investigate: the bottom nav prefetches each dashboard route 2–5 times (different `_rsc` keys) within a couple of seconds of loading

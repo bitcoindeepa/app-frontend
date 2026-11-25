@@ -47,7 +47,7 @@ bun run build
 | `src/components/ui/`                  | Shared UI components                                                                                            |
 | `src/components/dashboard/<feature>/` | Feature components, mirroring the dashboard routes                                                              |
 
-Tests use [Vitest](https://vitest.dev) and sit next to the code they cover (`src/lib/sell.ts` → `src/lib/sell.test.ts`). `bun run test:watch` reruns them as you edit. If you change logic in `src/lib/` (amounts, fees, formatting, validation) or a hook, add or update its test. Hook tests run against a fake backend and a stand-in platform from `src/test/`; `src/hooks/query/useP2p.test.tsx` is a good one to copy.
+Tests use [Vitest](https://vitest.dev) and sit next to the code they cover (`src/lib/sell.ts` → `src/lib/sell.test.ts`). `bun run test:watch` reruns them as you edit. If you change logic in `src/lib/` (amounts, fees, formatting, validation) or a hook, add or update its test. Hook tests run against a fake backend and a stand-in platform from `src/test/`; `src/hooks/query/useP2p.test.tsx` is a good one to copy, and `src/components/dashboard/sell/SellApproval.test.tsx` for a screen. If a screen behaves differently in Telegram and in the browser, test both.
 
 Rules worth knowing:
 

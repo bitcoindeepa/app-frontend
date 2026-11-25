@@ -11,12 +11,16 @@ export const TELEGRAM_MINI_APP_NAME =
   process.env.NEXT_PUBLIC_TELEGRAM_MINI_APP_NAME || "private_invite";
 
 /** Opens the Mini App directly (t.me link: the Telegram app, or Telegram Web). */
-export const TELEGRAM_MINI_APP_URL = `${TELEGRAM_BOT_URL}/${TELEGRAM_MINI_APP_NAME}`;
+export const TELEGRAM_MINI_APP_URL =
+  process.env.NEXT_PUBLIC_TELEGRAM_MINI_APP_URL ||
+  `${TELEGRAM_BOT_URL}/${TELEGRAM_MINI_APP_NAME}`;
 
 /** Same, as a tg:// deep link that goes straight into the installed Telegram app. */
-export const TELEGRAM_MINI_APP_DEEP_LINK = `tg://resolve?domain=${encodeURIComponent(
-  TELEGRAM_BOT_USERNAME
-)}&appname=${encodeURIComponent(TELEGRAM_MINI_APP_NAME)}`;
+export const TELEGRAM_MINI_APP_DEEP_LINK =
+  process.env.NEXT_PUBLIC_TELEGRAM_MINI_APP_DEEP_LINK ||
+  `tg://resolve?domain=${encodeURIComponent(TELEGRAM_BOT_USERNAME)}&appname=${encodeURIComponent(
+    TELEGRAM_MINI_APP_NAME
+  )}`;
 
 /** Personal invite link: opens the Mini App with the inviter's id as start param. */
 export const getInviteUrl = (userId: string) =>

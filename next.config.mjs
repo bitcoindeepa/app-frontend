@@ -1,6 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   allowedDevOrigins: ["*.sats.day", "*.ngrok-free.app"],
+  turbopack: {
+    resolveAlias: {
+      // qpdf-wasm (lib/pdf-unlock) requires these in its Node branch only,
+      // which never runs in the browser.
+      fs: { browser: "./src/lib/empty-module.ts" },
+      path: { browser: "./src/lib/empty-module.ts" },
+    },
+  },
   images: {
     // News feed images (see components/dashboard/news/NewsImage.tsx), resized
     // by the optimizer instead of downloading ~200 KB originals.

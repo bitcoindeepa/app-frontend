@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useMemo, useRef, useState } from "react";
-import { FileText, Upload } from "lucide-react";
+import { FileText, LockKeyhole, Upload, X } from "lucide-react";
 import { cn } from "cn";
 import { Badge } from "@/components/ui/badge";
 import { Bone } from "@/components/ui/bone";
@@ -14,6 +14,7 @@ import { Sheet } from "@/components/ui/sheet";
 import { TextField } from "@/components/ui/text-field";
 import { useToast } from "@/components/ui/toast";
 import { useAddBankAccount, useBanks, type Bank } from "@/hooks/query/useBankAccounts";
+import { pdfNeedsPassword, unlockPdf, WrongPdfPassword } from "@/lib/pdf-unlock";
 import {
   bankAccountSchema,
   STATEMENT_MAX_BYTES,
@@ -30,6 +31,9 @@ function fieldError(name: "accountNumber" | "accountName", value: string) {
   const result = bankAccountSchema.shape[name].safeParse(value);
   return result.success ? undefined : result.error.issues[0]?.message;
 }
+
+const LOCKED_PDF_DECLINED =
+  "That PDF has a password, so it wasn’t uploaded. Upload a copy without a password, or pick it again and enter its password.";
 
 const fileSize = (bytes: number) =>
   bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.ceil(bytes / 1024)} KB`;
@@ -52,6 +56,13 @@ export function AddBankAccountSheet({
   const [accountName, setAccountName] = useState("");
   const [statement, setStatement] = useState<File | null>(null);
   const [errors, setErrors] = useState<FieldErrors>({});
+  // A password-protected PDF waiting for its password. It's unlocked on this
+  // device and only the unlocked copy is uploaded; the locked one never is.
+  const [locked, setLocked] = useState<File | null>(null);
+  const [pdfPassword, setPdfPassword] = useState("");
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  // Checking a picked PDF for a password, or unlocking one
+  const [opening, setOpening] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const formId = useId();
 
@@ -60,6 +71,74 @@ export function AddBankAccountSheet({
     return (banks ?? []).filter((b) => !q || b.name.toLowerCase().includes(q));
   }, [banks, search]);
 
+  const clearLocked = () => {
+    setLocked(null);
+    setPdfPassword("");
+    setPdfError(null);
+  };
+
+  const setStatementError = (message: string | undefined) =>
+    setErrors((prev) => ({ ...prev, statement: message }));
+
+  const pickStatement = async (file: File) => {
+    clearLocked();
+    const check = bankAccountSchema.shape.statement.safeParse(file);
+    if (!check.success) {
+      setStatement(file);
+      setStatementError(check.error.issues[0]?.message);
+      return;
+    }
+    setStatement(null);
+    setStatementError(undefined);
+    setOpening(true);
+    try {
+      if (await pdfNeedsPassword(file)) {
+        haptic.notify("warning");
+        setLocked(file);
+        return;
+      }
+      setStatement(file);
+    } catch {
+      // Couldn't check it (the unlocker didn't load): don't risk uploading a
+      // locked PDF the reviewer can't open.
+      setStatementError("Couldn’t open this PDF. Check your connection and try again.");
+    } finally {
+      setOpening(false);
+    }
+  };
+
+  /** The member won't enter the password: drop the locked PDF, ask for an unlocked copy. */
+  const declineLocked = () => {
+    clearLocked();
+    setStatement(null);
+    setStatementError(LOCKED_PDF_DECLINED);
+  };
+
+  const unlockStatement = async () => {
+    if (!locked || !pdfPassword || opening) return;
+    setOpening(true);
+    setPdfError(null);
+    try {
+      const unlocked = await unlockPdf(locked, pdfPassword);
+      const check = bankAccountSchema.shape.statement.safeParse(unlocked);
+      clearLocked();
+      setStatement(unlocked);
+      setStatementError(check.success ? undefined : check.error.issues[0]?.message);
+      haptic.notify("success");
+    } catch (e) {
+      haptic.notify("error");
+      setPdfError(
+        e instanceof WrongPdfPassword
+          ? "That password didn’t work. Check it and try again."
+          : e instanceof Error
+            ? e.message
+            : "Couldn’t unlock this PDF"
+      );
+    } finally {
+      setOpening(false);
+    }
+  };
+
   const reset = () => {
     setPicking(false);
     setSearch("");
@@ -67,6 +146,7 @@ export function AddBankAccountSheet({
     setAccountNumber("");
     setAccountName("");
     setStatement(null);
+    clearLocked();
     setErrors({});
     addAccount.reset();
   };
@@ -79,6 +159,13 @@ export function AddBankAccountSheet({
 
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (opening) return;
+    if (locked) {
+      // Never upload the locked file: it has to be unlocked or replaced first
+      setPdfError("Enter the PDF’s password to unlock it, or upload a copy without a password.");
+      haptic.notify("error");
+      return;
+    }
     const parsed = bankAccountSchema.safeParse({
       bankCode: bank?.code,
       accountNumber,
@@ -129,7 +216,12 @@ export function AddBankAccountSheet({
       footer={
         picking ? undefined : (
           <div className="flex flex-col gap-2">
-            <Button type="submit" form={formId} loading={addAccount.isPending}>
+            <Button
+              type="submit"
+              form={formId}
+              loading={addAccount.isPending}
+              disabled={opening || !!locked}
+            >
               Submit for review
             </Button>
             {addAccount.isPending && (
@@ -260,16 +352,78 @@ export function AddBankAccountSheet({
               onChange={(e) => {
                 const file = e.target.files?.[0] ?? null;
                 e.target.value = ""; // allow picking the same file again
-                if (!file) return;
-                setStatement(file);
-                const check = bankAccountSchema.shape.statement.safeParse(file);
-                setErrors((prev) => ({
-                  ...prev,
-                  statement: check.success ? undefined : check.error.issues[0]?.message,
-                }));
+                if (file) void pickStatement(file);
               }}
             />
-            {statement ? (
+            {locked ? (
+              <div className="border-border flex flex-col gap-3 rounded-xl border p-4">
+                <div className="flex items-center gap-2">
+                  <LockKeyhole size={16} className="text-ink2 shrink-0" aria-hidden="true" />
+                  <span className="min-w-0 flex-1 truncate text-[14px] font-semibold">
+                    {locked.name}
+                  </span>
+                  <button
+                    type="button"
+                    className="press text-ink3 shrink-0 p-1"
+                    aria-label="Don’t unlock, choose another file"
+                    onClick={declineLocked}
+                  >
+                    <X size={16} aria-hidden="true" />
+                  </button>
+                </div>
+                <p className="text-ink3 text-[13px] leading-4">
+                  This PDF has a password. Banks often use your NIC number or date of birth.
+                  It&apos;s unlocked on this device and only the unlocked copy is uploaded. Your
+                  password isn&apos;t sent anywhere.
+                </p>
+                <div className="flex items-start gap-2">
+                  <TextField
+                    label="PDF password"
+                    type="password"
+                    autoComplete="off"
+                    autoFocus
+                    value={pdfPassword}
+                    error={pdfError ?? undefined}
+                    onChange={(e) => {
+                      setPdfPassword(e.target.value);
+                      setPdfError(null);
+                    }}
+                    onKeyDown={(e) => {
+                      // Enter unlocks the PDF instead of submitting the whole form
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        void unlockStatement();
+                      }
+                    }}
+                    className="min-w-0 flex-1"
+                  />
+                  <Button
+                    size="default"
+                    className="mt-2 shrink-0"
+                    disabled={!pdfPassword}
+                    loading={opening}
+                    onClick={() => void unlockStatement()}
+                  >
+                    Unlock
+                  </Button>
+                </div>
+                <p className="text-ink3 border-border border-t pt-3 text-[13px] leading-4">
+                  Rather not type it here? Open the PDF yourself, print it and choose{" "}
+                  <b className="text-foreground font-semibold">Save as PDF</b>. The new copy has no
+                  password.{" "}
+                  <button
+                    type="button"
+                    className="press text-primary font-semibold"
+                    onClick={() => {
+                      declineLocked();
+                      fileInput.current?.click();
+                    }}
+                  >
+                    Upload that copy
+                  </button>
+                </p>
+              </div>
+            ) : statement ? (
               <List>
                 <ListRow
                   icon={<FileText size={18} className="text-ink2" />}
@@ -280,6 +434,7 @@ export function AddBankAccountSheet({
                       variant="secondary"
                       size="sm"
                       className="bg-card"
+                      disabled={opening}
                       onClick={() => fileInput.current?.click()}
                     >
                       Change
@@ -295,6 +450,7 @@ export function AddBankAccountSheet({
                   "w-full",
                   errors.statement && "shadow-[0_0_0_2px_var(--destructive)]"
                 )}
+                loading={opening}
                 onClick={() => fileInput.current?.click()}
               >
                 <Upload size={18} />

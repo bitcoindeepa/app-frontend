@@ -46,7 +46,11 @@ export interface P2pTransfer {
   kind: "internal";
   status: P2pTransferStatus;
   amount: number;
-  amount_lkr?: string;
+  /**
+   * What the sats were worth when sent: our BTC/LKR rate at created_at
+   * (backend, from its rate log). Null when no rate was logged near then.
+   */
+  value_lkr?: number | null;
   memo?: string;
   to?: P2pRecipient;
   /** Why it failed / was cancelled / expired (user-facing) */

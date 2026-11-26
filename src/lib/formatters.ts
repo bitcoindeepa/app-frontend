@@ -33,17 +33,6 @@ export function fmtSatsUnit(sats: number): string {
   return `${fmtSats(sats)} ${satsUnit(sats)}`;
 }
 
-// The bot's `amount_lkr` / `balance_lkr`: a bare number ("1,234.56"), or on
-// older bot builds a display string ("1 sats (රු. 0.21)"). NaN when there's
-// no rupee value in it, so callers can leave the row out instead of showing 0.00.
-export function parseBotLkr(raw: string | number | null | undefined): number {
-  if (raw == null || raw === "") return NaN;
-  if (typeof raw === "number") return raw;
-  const inParens = raw.match(/රු\.\s*([\d,]+(?:\.\d+)?)/);
-  const n = Number((inParens ? inParens[1]! : raw).replace(/,/g, "").trim());
-  return Number.isFinite(n) ? n : NaN;
-}
-
 // Sri Lankan Rupee symbol used in place of the "LKR" code throughout the UI
 export const LKR_SYMBOL = "රු.";
 

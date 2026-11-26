@@ -7,7 +7,7 @@ import { ResultHero, Timeline, type TimelineState } from "@/components/dashboard
 import { useSecondsLeft } from "@/hooks/useSecondsLeft";
 import { celebrate } from "@/lib/celebrate";
 import { TELEGRAM_BOT_URL } from "@/lib/constants";
-import { fmtActivityDateTime, fmtLkrCurrency, fmtSatsUnit, parseBotLkr } from "@/lib/formatters";
+import { fmtActivityDateTime, fmtLkrCurrency, fmtSatsUnit } from "@/lib/formatters";
 import { recipientLabel, type P2pTransfer } from "@/lib/p2p";
 import { usePlatform } from "@/platform";
 
@@ -67,12 +67,12 @@ export const isTransferInProgress = (t: P2pTransfer | undefined) => {
 };
 
 export function transferRows(t: P2pTransfer) {
-  // The bot's rupee value of the amount. Older bot builds send a display
-  // string ("1 sats (රු. 0.21)"), which used to parse as NaN and show 0.00.
-  const lkr = parseBotLkr(t.amount_lkr);
+  const lkr = t.value_lkr;
   return [
     { k: "Amount", v: fmtSatsUnit(t.amount) },
-    ...(Number.isFinite(lkr) ? [{ k: "Value", v: `≈ ${fmtLkrCurrency(lkr)}` }] : []),
+    // What it was worth when sent (our rate logged nearest that minute); hidden
+    // when the backend has none, rather than showing 0.00 or today's value
+    ...(typeof lkr === "number" ? [{ k: "Value", v: `≈ ${fmtLkrCurrency(lkr)}` }] : []),
     ...(t.to ? [{ k: "To", v: recipientLabel(t.to) }] : []),
     ...(t.memo ? [{ k: "Note", v: t.memo }] : []),
     { k: "Date", v: fmtActivityDateTime(t.created_at) },

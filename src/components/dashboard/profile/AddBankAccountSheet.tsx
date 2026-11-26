@@ -63,6 +63,10 @@ export function AddBankAccountSheet({
   const [pdfError, setPdfError] = useState<string | null>(null);
   // Checking a picked PDF for a password, or unlocking one
   const [opening, setOpening] = useState(false);
+  // Bumped whenever a pending check/unlock stops mattering (declined, sheet
+  // closed, another file picked), so its late result can't bring back a
+  // statement the member already discarded.
+  const pdfOp = useRef(0);
   const fileInput = useRef<HTMLInputElement>(null);
   const formId = useId();
 
@@ -77,10 +81,17 @@ export function AddBankAccountSheet({
     setPdfError(null);
   };
 
+  /** Drop any check/unlock still running; its result will be ignored. */
+  const cancelPdfOp = () => {
+    pdfOp.current++;
+    setOpening(false);
+  };
+
   const setStatementError = (message: string | undefined) =>
     setErrors((prev) => ({ ...prev, statement: message }));
 
   const pickStatement = async (file: File) => {
+    const op = ++pdfOp.current;
     clearLocked();
     const check = bankAccountSchema.shape.statement.safeParse(file);
     if (!check.success) {
@@ -92,23 +103,27 @@ export function AddBankAccountSheet({
     setStatementError(undefined);
     setOpening(true);
     try {
-      if (await pdfNeedsPassword(file)) {
+      const needsPassword = await pdfNeedsPassword(file);
+      if (op !== pdfOp.current) return;
+      if (needsPassword) {
         haptic.notify("warning");
         setLocked(file);
         return;
       }
       setStatement(file);
     } catch {
+      if (op !== pdfOp.current) return;
       // Couldn't check it (the unlocker didn't load): don't risk uploading a
       // locked PDF the reviewer can't open.
       setStatementError("Couldn’t open this PDF. Check your connection and try again.");
     } finally {
-      setOpening(false);
+      if (op === pdfOp.current) setOpening(false);
     }
   };
 
   /** The member won't enter the password: drop the locked PDF, ask for an unlocked copy. */
   const declineLocked = () => {
+    cancelPdfOp();
     clearLocked();
     setStatement(null);
     setStatementError(LOCKED_PDF_DECLINED);
@@ -116,16 +131,19 @@ export function AddBankAccountSheet({
 
   const unlockStatement = async () => {
     if (!locked || !pdfPassword || opening) return;
+    const op = ++pdfOp.current;
     setOpening(true);
     setPdfError(null);
     try {
       const unlocked = await unlockPdf(locked, pdfPassword);
+      if (op !== pdfOp.current) return;
       const check = bankAccountSchema.shape.statement.safeParse(unlocked);
       clearLocked();
       setStatement(unlocked);
       setStatementError(check.success ? undefined : check.error.issues[0]?.message);
       haptic.notify("success");
     } catch (e) {
+      if (op !== pdfOp.current) return;
       haptic.notify("error");
       setPdfError(
         e instanceof WrongPdfPassword
@@ -135,7 +153,7 @@ export function AddBankAccountSheet({
             : "Couldn’t unlock this PDF"
       );
     } finally {
-      setOpening(false);
+      if (op === pdfOp.current) setOpening(false);
     }
   };
 
@@ -146,6 +164,7 @@ export function AddBankAccountSheet({
     setAccountNumber("");
     setAccountName("");
     setStatement(null);
+    cancelPdfOp();
     clearLocked();
     setErrors({});
     addAccount.reset();

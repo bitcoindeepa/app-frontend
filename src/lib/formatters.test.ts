@@ -10,6 +10,8 @@ import {
   fmtLkrExact,
   fmtLkrPreset,
   fmtPriceCompact,
+  fmtSatsUnit,
+  satsUnit,
   fmtRelativeDays,
   fmtSats,
   fmtSatsCompact,
@@ -145,5 +147,16 @@ describe("dates", () => {
     expect(fmtRelativeDays(new Date(NOW.getTime() + 5 * day))).toBe("In 5 days");
     expect(fmtRelativeDays(new Date(NOW.getTime() - day))).toBe("1 day ago");
     expect(fmtRelativeDays(new Date(NOW.getTime() - 2 * day))).toBe("2 days ago");
+  });
+});
+
+describe("fmtSatsUnit / satsUnit", () => {
+  it('says "sat" for exactly one and "sats" otherwise', () => {
+    expect(fmtSatsUnit(1)).toBe("1 sat");
+    expect(fmtSatsUnit(0)).toBe("0 sats");
+    expect(fmtSatsUnit(2)).toBe("2 sats");
+    expect(fmtSatsUnit(21_000)).toBe("21,000 sats");
+    expect(satsUnit(-1)).toBe("sat");
+    expect(satsUnit(1.9)).toBe("sat"); // shown as 1 (floored)
   });
 });

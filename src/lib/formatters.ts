@@ -22,6 +22,17 @@ export function fmtSats(sats: number): string {
   return Math.floor(sats).toLocaleString("en-US");
 }
 
+// "sat" for exactly one, "sats" otherwise (0 sats, 2 sats, 1,000 sats)
+export function satsUnit(sats: number): "sat" | "sats" {
+  return Math.abs(Math.floor(sats)) === 1 ? "sat" : "sats";
+}
+
+// A sats count with its unit, used for every amount shown in sats
+// (e.g. 1 -> "1 sat", 21000 -> "21,000 sats")
+export function fmtSatsUnit(sats: number): string {
+  return `${fmtSats(sats)} ${satsUnit(sats)}`;
+}
+
 // Sri Lankan Rupee symbol used in place of the "LKR" code throughout the UI
 export const LKR_SYMBOL = "රු.";
 

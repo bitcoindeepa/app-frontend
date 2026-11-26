@@ -17,7 +17,7 @@ import {
 import {
   fmtLkrCurrency,
   fmtRelativeDays,
-  fmtSats,
+  fmtSatsUnit,
   fmtShortDate,
   maskDigits,
 } from "@/lib/formatters";
@@ -186,7 +186,7 @@ export function PlanHeroCard({
             sub={
               !summaryLoading && (
                 <span className="num text-[12px] leading-4 text-white/88">
-                  {mask(`${fmtSats(investedSats)} sats`)}
+                  {mask(fmtSatsUnit(investedSats))}
                   {feesLkr > 0 && ` · + ${mask(fmtLkrCurrency(feesLkr))} fees`}
                 </span>
               )

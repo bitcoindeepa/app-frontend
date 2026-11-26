@@ -9,7 +9,7 @@ import { useSecondsLeft } from "@/hooks/useSecondsLeft";
 import { TELEGRAM_BOT_URL } from "@/lib/constants";
 import { PasskeyStepError } from "@/lib/passkey";
 import { FetchyError } from "@/lib/fetchy";
-import { fmtSats } from "@/lib/formatters";
+import { fmtSatsUnit } from "@/lib/formatters";
 import { isReloginError } from "@/lib/p2p";
 import { haptic, usePlatform } from "@/platform";
 
@@ -20,8 +20,8 @@ export function collectView(order: SellOrder): { title: string; text: string; wa
       return {
         title: "Approve the payment",
         text: order.collect.payInApp
-          ? `Pay ${fmtSats(order.sats)} sats from your wallet to finish this sale. You can also tap ✅ Pay in the bot chat.`
-          : `Tap ✅ Pay in the Bitcoin Deepa bot chat to send ${fmtSats(order.sats)} sats and finish this sale.`,
+          ? `Pay ${fmtSatsUnit(order.sats)} from your wallet to finish this sale. You can also tap ✅ Pay in the bot chat.`
+          : `Tap ✅ Pay in the Bitcoin Deepa bot chat to send ${fmtSatsUnit(order.sats)} and finish this sale.`,
         waiting: true,
       };
     case "awaiting_confirmation":
@@ -135,7 +135,7 @@ export function SellApproval({ order }: { order: SellOrder }) {
           disabled={pay.isPending || cancel.isPending || secondsLeft === 0}
           onClick={() => void onPay()}
         >
-          Pay {fmtSats(order.sats)} sats
+          Pay {fmtSatsUnit(order.sats)}
         </Button>
       )}
       <Button

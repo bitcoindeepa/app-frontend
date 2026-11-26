@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { fmtLkrCurrency } from "@/lib/formatters";
+import { fmtLkrCurrency, fmtSatsUnit, fmtSats } from "@/lib/formatters";
 
 /**
  * A Sri Lankan mobile number as people type it ("077 123 4567", "0771234567",
@@ -90,7 +90,7 @@ export const DEFAULT_SELL_MIN_SATS = 1000;
 /** Over the spendable balance: point at the pots when they're why. */
 const overBalanceMessage = (balanceSats: number, potSats: number) =>
   potSats > 0
-    ? `You can use ${balanceSats.toLocaleString("en-US")} sats. ${potSats.toLocaleString("en-US")} are in savings pots`
+    ? `You can use ${fmtSatsUnit(balanceSats)}. ${fmtSats(potSats)} ${potSats === 1 ? "is" : "are"} in savings pots`
     : "That's more than your balance";
 
 /** Sats to sell: a whole number between the minimum and the balance. */
@@ -105,8 +105,8 @@ export const sellAmountSchema = (
   z
     .number({ message: "Enter an amount in sats" })
     .int("Use whole sats")
-    .min(minSats, `Minimum is ${minSats.toLocaleString("en-US")} sats`)
-    .max(maxSats, `Maximum per sale is ${maxSats.toLocaleString("en-US")} sats`)
+    .min(minSats, `Minimum is ${fmtSatsUnit(minSats)}`)
+    .max(maxSats, `Maximum per sale is ${fmtSatsUnit(maxSats)}`)
     .max(balanceSats, overBalanceMessage(balanceSats, potSats));
 
 /** One-time buy amount in whole LKR; limits come from GET /buy/price. */
@@ -130,7 +130,7 @@ export const sendAmountSchema = (
     .number({ message: "Enter an amount in sats" })
     .int("Use whole sats")
     .min(1, "Enter an amount in sats")
-    .max(maxSats, `Maximum per send is ${maxSats.toLocaleString("en-US")} sats`)
+    .max(maxSats, `Maximum per send is ${fmtSatsUnit(maxSats)}`)
     .max(dailyRemaining, `You can send ${dailyRemaining.toLocaleString("en-US")} more sats today`)
     .max(balanceSats, overBalanceMessage(balanceSats, potSats));
 

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
 import { useWalletSummary } from "@/hooks/query/useWalletSummary";
 import { TELEGRAM_BOT_URL } from "@/lib/constants";
-import { fmtSats } from "@/lib/formatters";
+import { fmtSatsUnit, fmtSats } from "@/lib/formatters";
 import { usePlatform } from "@/platform";
 
 /**
@@ -73,7 +73,7 @@ function BalanceBreakdownSheet({
           <>
             <div className="text-center">
               <p className="text-ink2 text-[13px] leading-[18px] font-semibold">In your wallet</p>
-              <p className="num text-[28px] leading-9 font-bold">{fmtSats(total)} sats</p>
+              <p className="num text-[28px] leading-9 font-bold">{fmtSatsUnit(total)}</p>
             </div>
 
             <BalanceBar
@@ -113,7 +113,7 @@ function BalanceBreakdownSheet({
                           <LockIcon />
                           <span className="truncate">{pot.name}</span>
                         </span>
-                        <span className="num text-ink2 shrink-0">{fmtSats(pot.balance)} sats</span>
+                        <span className="num text-ink2 shrink-0">{fmtSatsUnit(pot.balance)}</span>
                       </li>
                     ))}
                   </ul>
@@ -193,7 +193,7 @@ function Row({
             <p className="text-ink2 text-[13px] leading-[18px]">{note}</p>
           </div>
         </div>
-        <p className="num shrink-0 text-[15px] leading-5 font-semibold">{fmtSats(sats)} sats</p>
+        <p className="num shrink-0 text-[15px] leading-5 font-semibold">{fmtSatsUnit(sats)}</p>
       </div>
       {children}
     </li>

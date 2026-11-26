@@ -7,7 +7,16 @@ import { ValueSkeleton } from "@/components/ui/value-skeleton";
 import { NumberTicker } from "@/components/motion/number-ticker";
 import { haptic } from "@/platform";
 import type { DisplayCurrency } from "@/hooks/useDisplayCurrency";
-import { fmtBtc, fmtLkr, fmtSats, fmtUsd, LKR_SYMBOL, maskDigits } from "@/lib/formatters";
+import {
+  LKR_SYMBOL,
+  fmtBtc,
+  fmtLkr,
+  fmtSatsUnit,
+  fmtUsd,
+  maskDigits,
+  satsUnit,
+  fmtSats,
+} from "@/lib/formatters";
 
 export interface TotalValueCardProps {
   totalLkr: number;
@@ -54,7 +63,7 @@ export function TotalValueCard({
   const isUsd = currency === "USD" && usdRate !== undefined;
   const fiat = (lkr: number) => (isUsd ? fmtUsd(lkr * usdRate) : `${LKR_SYMBOL} ${fmtLkr(lkr)}`);
   const isProfit = changePercent >= 0;
-  const satsText = `${fmtSats(totalSats)} sats`;
+  const satsText = fmtSatsUnit(totalSats);
 
   return (
     <Hero priority>
@@ -140,7 +149,7 @@ export function TotalValueCard({
                 // One ticker for sats, LKR and USD: every switch rolls the digits.
                 <NumberTicker
                   {...(primary === "sats"
-                    ? { value: totalSats, suffix: "\u00a0sats", format: fmtSats }
+                    ? { value: totalSats, suffix: `\u00a0${satsUnit(totalSats)}`, format: fmtSats }
                     : fiatTicker(totalLkr, isUsd ? usdRate : undefined))}
                 />
               ) : (
@@ -157,7 +166,7 @@ export function TotalValueCard({
             // Included in the total above; locked until withdrawn from the pot in the bot
             <p className="num hero-text flex items-center gap-1.5 text-[12px] leading-4 text-white/90">
               <LockIcon />
-              {mask(`${fmtSats(potSats)} sats`)} in savings pots
+              {mask(fmtSatsUnit(potSats))} in savings pots
               <span aria-hidden className="size-[2.2px] rounded-full bg-current" />
               {mask(`≈ ${fiat(potLkr)}`)}
             </p>

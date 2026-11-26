@@ -25,7 +25,7 @@ import { useBotTransactionHistory } from "@/hooks/query/useBotTransactionHistory
 import { useWalletMetrics } from "@/hooks/query/useWalletMetrics";
 import { PasskeyStepError } from "@/lib/passkey";
 import { FetchyError } from "@/lib/fetchy";
-import { fmtLkrCurrency, fmtSats } from "@/lib/formatters";
+import { fmtLkrCurrency, fmtSatsUnit, fmtSats } from "@/lib/formatters";
 import { MovableHint } from "@/components/dashboard/trade/MovableBalance";
 import { isReloginError, recipientLabel, type P2pRecipient } from "@/lib/p2p";
 import { sendAmountSchema, sendMemoSchema } from "@/lib/validations";
@@ -351,7 +351,7 @@ export default function SendSheet({
           <Presets
             items={[1000, 5000, 10000]
               .map((v) => ({
-                label: `${fmtSats(v)} sats`,
+                label: fmtSatsUnit(v),
                 on: d.active === "sats" && sats === v,
                 disabled: !limits || v > maxSendable,
                 pick: () => d.set("sats", v),
@@ -370,7 +370,7 @@ export default function SendSheet({
           )}
           {limits && (
             <PriceFooter>
-              Up to {fmtSats(limits.max_amount)} sats per send · {fmtSats(limits.daily_remaining)}{" "}
+              Up to {fmtSatsUnit(limits.max_amount)} per send · {fmtSats(limits.daily_remaining)}{" "}
               more today
             </PriceFooter>
           )}
@@ -393,7 +393,7 @@ export default function SendSheet({
     );
     footer = (
       <Button disabled={!found || !amountOk} onClick={toReview}>
-        {found && amountOk ? `Review · ${fmtSats(sats)} sats` : "Review"}
+        {found && amountOk ? `Review · ${fmtSatsUnit(sats)}` : "Review"}
       </Button>
     );
   } else if (step === "review" && recipient) {
@@ -405,7 +405,7 @@ export default function SendSheet({
       <>
         <ReviewHeader
           caption="You send"
-          big={`${fmtSats(sats)} sats`}
+          big={fmtSatsUnit(sats)}
           small={rate > 0 ? `≈ ${fmtLkrCurrency(lkrFor(sats))}` : undefined}
         />
         {needsConfirm && (
@@ -416,13 +416,13 @@ export default function SendSheet({
           className="mb-3"
           rows={[
             { k: "To", v: recipientLabel(recipient) },
-            { k: "Amount", v: `${fmtSats(sats)} sats` },
+            { k: "Amount", v: fmtSatsUnit(sats) },
             ...(rate > 0 ? [{ k: "Value", v: `≈ ${fmtLkrCurrency(lkrFor(sats))}` }] : []),
             ...(limits
               ? [
                   {
                     k: "Left today after this",
-                    v: `${fmtSats(Math.max(0, limits.daily_remaining - sats))} sats`,
+                    v: fmtSatsUnit(Math.max(0, limits.daily_remaining - sats)),
                   },
                 ]
               : []),
@@ -446,7 +446,7 @@ export default function SendSheet({
     footer = (
       <>
         <Button disabled={!!memoError} loading={send.isPending} onClick={() => void onSend()}>
-          Send {fmtSats(sats)} sats
+          Send {fmtSatsUnit(sats)}
         </Button>
         <p className="text-ink3 mt-2 text-center text-[12px] font-semibold">
           This can&apos;t be undone.

@@ -25,7 +25,7 @@ import {
 import fetchy, { FetchyError } from "@/lib/fetchy";
 import { usePayHereRedirect } from "@/lib/hooks";
 import { estimateBuy } from "@/lib/buy";
-import { fmtLkrCurrency, fmtSats } from "@/lib/formatters";
+import { fmtLkrCurrency, fmtSatsUnit } from "@/lib/formatters";
 import { usePackages } from "@/hooks/query/usePackages";
 import { useBuyPrice } from "@/hooks/query/useBuy";
 import { useUser } from "@/hooks/useUser";
@@ -109,7 +109,7 @@ export function ChoosePlanView({ asTab = false }: { asTab?: boolean }) {
       price.bitcoindeepaFeeBasisPoints,
       price.btcLkrPrice
     );
-    return `≈ ${fmtSats(sats)} sats every ${perLabel(plan.type)} at today’s rate`;
+    return `≈ ${fmtSatsUnit(sats)} every ${perLabel(plan.type)} at today’s rate`;
   };
 
   const handleDurationChange = (d: PlanDuration) => {

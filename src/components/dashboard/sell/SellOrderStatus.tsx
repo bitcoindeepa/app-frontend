@@ -6,7 +6,7 @@ import { ResultHero, Timeline, type TimelineState } from "@/components/dashboard
 import type { SellOrder, SellStatus } from "@/hooks/query/useSell";
 import { celebrate } from "@/lib/celebrate";
 import { collectView, SellApproval } from "./SellApproval";
-import { fmtActivityDateTime, fmtLkrExact, fmtSats } from "@/lib/formatters";
+import { fmtActivityDateTime, fmtLkrExact, fmtSatsUnit } from "@/lib/formatters";
 
 const CROSS = "/emoji/animated/cross-mark.webp";
 const EXCLAMATION = "/emoji/animated/exclamation-mark.webp";
@@ -49,13 +49,13 @@ const STATE: Record<
   REFUNDING: {
     title: "Returning your sats",
     text: (o) =>
-      `We couldn't send the LKR to your bank, so we're returning your ${fmtSats(o.sats)} sats to your wallet.`,
+      `We couldn't send the LKR to your bank, so we're returning your ${fmtSatsUnit(o.sats)} to your wallet.`,
     progress: true,
   },
   REFUNDED: {
     title: "Sale cancelled",
     text: (o) =>
-      `We couldn't send the LKR to your bank, so your ${fmtSats(o.sats)} sats were returned to your wallet.`,
+      `We couldn't send the LKR to your bank, so your ${fmtSatsUnit(o.sats)} ${o.sats === 1 ? "was" : "were"} returned to your wallet.`,
     emoji: CROSS,
   },
   NEEDS_REVIEW: {
@@ -114,7 +114,7 @@ export function sellOrderRows(order: SellOrder) {
     { k: "Amount", v: fmtLkrExact(order.amountLkr) },
     {
       k: SOLD_STATUSES.includes(order.status) ? "Sats sold" : "Sats",
-      v: `${fmtSats(order.sats)} sats`,
+      v: fmtSatsUnit(order.sats),
     },
     { k: "Value", v: fmtLkrExact(order.grossLkr) },
     ...(NO_FEE_STATUSES.includes(order.status)

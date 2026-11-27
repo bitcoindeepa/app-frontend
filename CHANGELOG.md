@@ -7,6 +7,14 @@ Releasing: bump `version` in `package.json` and add a matching `## [x.y.z] - YYY
 PR to `main`. When it merges, the Release workflow tags `vx.y.z` and publishes a GitHub release with that section as
 its notes. Keep unreleased work under `## [Unreleased]
 
+## [Unreleased]
+
+### Changed
+
+- **Change plan without cancelling first.** "Change plan" now opens the plan picker. The member picks a new plan and
+  pays for it in one checkout (`switch: true`); the old plan keeps running until that first payment goes through, so
+  an abandoned checkout no longer leaves them without a plan. Needs the backend's plan-switch release.
+
 ## [2.2.0] - 2026-11-26
 
 ### Added

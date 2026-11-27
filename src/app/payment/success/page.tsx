@@ -1,19 +1,25 @@
 "use client";
 
 import { Suspense, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { BuyOrderStatus } from "@/components/dashboard/buy/BuyOrderStatus";
 import { StatusScreen, SuccessCheck } from "@/components/auth/StatusScreen";
 import { buttonVariants } from "@/components/ui/button";
 import { celebrate } from "@/lib/celebrate";
+import { queryKeys } from "@/lib/query-keys";
 import { haptic } from "@/platform";
 
 function PlanPaymentSuccess() {
+  const queryClient = useQueryClient();
   useEffect(() => {
     haptic.notify("success");
     void celebrate();
-  }, []);
+    // A new plan, or a switch that just retired the old one: don't show the
+    // cached plan.
+    void queryClient.invalidateQueries({ queryKey: queryKeys.subscriptionCurrent });
+  }, [queryClient]);
 
   return (
     <StatusScreen
@@ -25,7 +31,8 @@ function PlanPaymentSuccess() {
         </Link>
       }
     >
-      Your plan is now active. Head back to your wallet to track your rewards.
+      Your plan starts as soon as PayHere confirms the payment, usually within a minute. If you
+      switched plans, your old plan stops then.
     </StatusScreen>
   );
 }

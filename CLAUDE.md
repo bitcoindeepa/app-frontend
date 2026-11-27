@@ -29,7 +29,7 @@ Tests sit next to the code as `*.test.ts` and run in Node in the `Asia/Colombo` 
 
 - Providers (`src/app/context/providers.tsx`): Platform → Theme → QueryClient (60 s default `staleTime`) → Toast.
 - Server state: TanStack Query. Each `src/hooks/query/*` file exports a `queryOptions` factory plus a hook; keys in `src/lib/query-keys.ts`. Client state: small `useSyncExternalStore` hooks (`useSession`, `useBalanceVisible`), no global store. Forms: React state + Zod (`src/lib/validations.ts`).
-- Plan picker `ChoosePlanView` is both the Plans tab (no active plan) and `/dashboard/plans/choose`. `/plans/choose` only redirects.
+- Plan picker `ChoosePlanView` is both the Plans tab (no active plan) and `/dashboard/plans/choose` ("Change plan"). `/plans/choose` only redirects. With an active plan it's a switch: one checkout with `switch: true`, and the backend retires the old plan once the new one's first payment succeeds (never cancel first: an abandoned checkout would leave them with no plan).
 - UI: `src/components/ui/` shadcn-style (`cva`, `cn` from the `cn` package, Base UI for Dialog/Toast/Collapsible). Feature components in `src/components/dashboard/<feature>/`. Use semantic color tokens from `src/styles/theme.css`, not raw hex. Light/dark = `<html data-theme>`, set pre-paint by `src/lib/theme-boot.ts`.
 - Don't reintroduce `@telegram-apps/telegram-ui`. `@tma.js/sdk` is imported only in `src/platform/` (ESLint-enforced); `setupTelegram()` must run first.
 - React 19: `ref` as a prop, `<Context value>` + `use()`, server data via TanStack (not `use(promise)`/`useActionState`/`useOptimistic`). React Compiler is deliberately off (+7% JS, no gain).

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { PlanHeroCard } from "@/components/dashboard/plans/PlanHeroCard";
 import { ChoosePlanView } from "@/components/dashboard/plans/ChoosePlanView";
 import { GiftPlansComingSoon } from "@/components/dashboard/plans/GiftPlansComingSoon";
@@ -14,6 +15,7 @@ import { stripFrequencySuffix } from "@/components/dashboard/wallet/PlanSummaryC
 import PlansLoading from "./loading";
 
 export default function PlansPage() {
+  const router = useRouter();
   const offline = useOffline();
   const { data: kyc, isLoading: kycLoading } = useKycStatus();
   const { visible: balanceVisible, toggle: toggleBalanceVisible } = useBalanceVisible();
@@ -46,8 +48,9 @@ export default function PlansPage() {
         onToggleVisible={toggleBalanceVisible}
         subscriptionLoading={subscriptionLoading}
         summaryLoading={summaryLoading}
-        onCancel={() => void cancel(planName, "cancel")}
-        onChangePlan={() => void cancel(planName, "switch")}
+        onCancel={() => void cancel(planName)}
+        // Pick the new plan first; the old one stops when the new one is paid.
+        onChangePlan={() => router.push("/dashboard/plans/choose")}
         cancelling={cancelling}
         offline={offline}
       />

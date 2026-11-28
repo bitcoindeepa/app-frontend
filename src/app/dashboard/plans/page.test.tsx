@@ -92,7 +92,7 @@ const planCard = (name: string) => ({ name: new RegExp(`^${name}`) });
 const plan = (name: string) => screen.getByRole("button", planCard(name));
 const cta = () =>
   screen.getByRole("button", {
-    name: /^(Activate|Select a plan|Cancel .* to switch)/,
+    name: /^(Activate|Select a plan|Switch to|You're on)/,
   }) as HTMLButtonElement;
 
 function goOffline(offline: boolean) {
@@ -298,21 +298,18 @@ describe("the Plans tab", () => {
       expect(await screen.findByRole("heading", { name: "Choose your plan" })).toBeTruthy();
     });
 
-    it("to change plan, cancels the current one first and says to pick the new one", async () => {
+    it("to change plan, opens the plan picker and cancels nothing", async () => {
       const platform = setPlatform(webPlatform());
-      const state = member({ plan: SHRIMP });
-      backend("POST", "/subscription/cancel", () => {
-        state.plan = null;
-        return {};
-      });
+      member({ plan: SHRIMP });
+      const cancels = backend("POST", "/subscription/cancel");
       const { user } = renderScreen(<PlansPage />);
 
       await user.click(await screen.findByRole("button", { name: "Change plan" }));
 
-      expect(await screen.findByText("Now pick your new plan.")).toBeTruthy();
-      expect(platform.confirm).toHaveBeenCalledWith(
-        expect.objectContaining({ title: "Cancel your plan first?", confirmText: "Cancel Shrimp" })
-      );
+      // The old plan keeps running until the new one is paid (a switch checkout)
+      expect(router.push).toHaveBeenCalledWith("/dashboard/plans/choose");
+      expect(platform.confirm).not.toHaveBeenCalled();
+      expect(cancels).toHaveLength(0);
     });
 
     it("cancels nothing when the member keeps the plan", async () => {
@@ -358,20 +355,34 @@ describe("the Plans tab", () => {
 });
 
 describe("the change-plan page", () => {
-  it("shows the current plan and sells nothing until it is cancelled", async () => {
+  it("shows the current plan, can't buy it again, and switches to another in one checkout", async () => {
     member({ plan: SHRIMP });
-    const links = backend("POST", "/subscription/payhere-link", { link: "https://x.test/pay" });
+    const cancels = backend("POST", "/subscription/cancel");
+    const links = backend("POST", "/subscription/payhere-link", {
+      link: "https://sandbox.payhere.lk/pay/checkout?merchant_id=121&hash=ABC",
+    });
+    const opened = payHere();
     const { user } = renderScreen(<ChoosePlanView />);
 
     expect(await screen.findByRole("heading", { name: "Change your plan" })).toBeTruthy();
     expect(await screen.findByText("You're on Shrimp.")).toBeTruthy();
-    expect(cta().textContent).toBe("Cancel Shrimp to switch");
+
+    // Their own plan can't be bought again
+    await user.click(plan("Shrimp"));
+    expect(cta().textContent).toBe("You're on Shrimp");
     expect(cta().disabled).toBe(true);
 
-    // choosing another plan doesn't make it buyable either: one plan at a time
+    // Another one is a switch: one checkout, no cancel first
     await user.click(plan("Crab"));
-    expect(cta().disabled).toBe(true);
-    expect(links).toHaveLength(0);
+    expect(cta().textContent).toMatch(/^Switch to Crab/);
+    await user.click(cta());
+    const confirm = await screen.findByRole("dialog", { name: "Confirm switch" });
+    expect(within(confirm).getByText("Shrimp, once you've paid")).toBeTruthy();
+    await user.click(within(confirm).getByRole("button", { name: "Continue to PayHere" }));
+
+    await waitFor(() => expect(opened).toHaveLength(1));
+    expect(links[0].body).toEqual({ package_id: "pkg_w2", switch: true });
+    expect(cancels).toHaveLength(0);
   });
 
   it("opens on the frequency of the member's plan", async () => {

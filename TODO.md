@@ -42,7 +42,8 @@ Remaining:
 - [x] Tests for `fetchy` (401 and 403 handling), `auth`, `app-lock`, the launch scripts and the service worker update
 - [x] Tests for the platform layer and the session, app lock, passkey, send and sell hooks (Testing Library + MSW)
 - [x] Tests for the screens: login, passkey lock, passkey settings, send, buy and sell
-- [ ] Tests for the rest: wallet, activity, plans, KYC, payout account, username and avatar sheets
+- [x] Tests for the wallet, activity, plans, identity verification, payout account, username and picture sheets, purchase status and the dashboard layout
+- [ ] Tests for what's left: the tab bar, theme, calculator, tasks, landing page and personal details
 - [ ] A small Playwright suite for what jsdom can't show: the news pages (server components), real passkey prompts, response headers
 - [ ] Dev mock login: needs a dev-only backend endpoint, decide later
 - [ ] Later: httpOnly cookie session instead of the localStorage token (backend change)

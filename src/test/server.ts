@@ -11,9 +11,13 @@ export const server = setupServer();
 export interface Seen {
   method: string;
   path: string;
+  /** The query string, without the "?" */
+  query: string;
   headers: Headers;
-  /** The parsed JSON body, or undefined when there was none */
+  /** The parsed JSON body (the text, when it isn't JSON), or undefined when there was none */
   body: unknown;
+  /** Size of the body as sent */
+  bytes: number;
 }
 
 /**
@@ -27,30 +31,34 @@ export function startBackend() {
 }
 
 type Reply = JsonBodyType | (() => JsonBodyType) | ((seen: Seen) => Response);
+type Method = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
 /**
- * Answers `METHOD path` on the backend and records each request it gets.
- * `reply` is the JSON to send (200), or a function that builds the response.
- *
- *   const sends = backend("POST", "/p2p/send", transfer);
- *   ...
- *   expect(sends[0].body).toEqual({ amount: 5 });
+ * Answers `METHOD url` (a full URL) and records each request it gets. Use
+ * `backend` for the app's own backend; this is for anything else the app
+ * talks to, such as a presigned storage upload.
  */
-export function backend(
-  method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE",
-  path: string,
-  reply: Reply = {}
-): Seen[] {
+export function answer(method: Method, url: string, reply: Reply = {}): Seen[] {
   const seen: Seen[] = [];
   const route = http[method.toLowerCase() as "get"];
   server.use(
-    route(`${API}${path}`, async ({ request }) => {
-      const text = await request.text();
+    route(url, async ({ request }) => {
+      const bytes = await request.arrayBuffer();
+      const text = new TextDecoder().decode(bytes);
+      let body: unknown;
+      try {
+        body = text ? JSON.parse(text) : undefined;
+      } catch {
+        // not JSON (an uploaded file): keep it as text
+        body = text;
+      }
       const entry: Seen = {
         method: request.method,
         path: new URL(request.url).pathname,
+        query: new URL(request.url).search.slice(1),
         headers: request.headers,
-        body: text ? JSON.parse(text) : undefined,
+        body,
+        bytes: bytes.byteLength,
       };
       seen.push(entry);
       if (typeof reply !== "function") return HttpResponse.json(reply);
@@ -60,6 +68,17 @@ export function backend(
   );
   return seen;
 }
+
+/**
+ * Answers `METHOD path` on the backend and records each request it gets.
+ * `reply` is the JSON to send (200), or a function that builds the response.
+ *
+ *   const sends = backend("POST", "/p2p/send", transfer);
+ *   ...
+ *   expect(sends[0].body).toEqual({ amount: 5 });
+ */
+export const backend = (method: Method, path: string, reply: Reply = {}): Seen[] =>
+  answer(method, `${API}${path}`, reply);
 
 /** An error response in the backend's shape */
 export const failWith = (status: number, message: string, code?: string) => () =>

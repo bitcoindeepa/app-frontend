@@ -103,6 +103,22 @@ describe("ChoosePlanView", () => {
     expect(cancels).toHaveLength(0);
   });
 
+  it("still sends a switch when their plan's package isn't in the catalog", async () => {
+    // e.g. a retired package: the catalog can't name it, but the plan is active
+    member({ plan: "00000000-0000-0000-0000-0000000000ff" });
+    const links = backend("POST", "/subscription/payhere-link", { link: "https://payhere/3" });
+    const { user } = renderScreen(<ChoosePlanView />);
+
+    await user.click(await screen.findByRole("button", { name: /Switch to Shrimp/ }));
+    const sheet = await screen.findByRole("dialog", { name: "Confirm switch" });
+    // Named from the subscription instead
+    expect(within(sheet).getByText("Shrimp, once you've paid")).toBeTruthy();
+    await user.click(within(sheet).getByRole("button", { name: "Continue to PayHere" }));
+
+    await waitFor(() => expect(payHere).toHaveBeenCalledWith("https://payhere/3"));
+    expect(links[0].body).toEqual({ package_id: SHRIMP, switch: true });
+  });
+
   it("can't buy the plan they're already on", async () => {
     member({ plan: SHRIMP });
     const { user } = renderScreen(<ChoosePlanView />);

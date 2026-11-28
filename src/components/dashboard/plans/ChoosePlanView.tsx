@@ -61,7 +61,7 @@ export function ChoosePlanView({ asTab = false }: { asTab?: boolean }) {
   const router = useRouter();
   const redirectToPayHereViaPage = usePayHereRedirect();
   const { status: sessionStatus } = useSession();
-  const { subscription } = useUser();
+  const { subscription, subscriptionLoading } = useUser();
   const offline = useOffline();
 
   // null = not picked yet: follow the current plan's frequency (weekly otherwise).
@@ -93,6 +93,10 @@ export function ChoosePlanView({ asTab = false }: { asTab?: boolean }) {
       subscription?.isActive ? packages.find((p) => p.id === subscription.packageId) : undefined,
     [packages, subscription]
   );
+  // Whether this checkout is a switch: any active plan, even one whose package
+  // isn't in the catalog. Keyed on the catalog match, a member whose package is
+  // missing would be sent without `switch` and get 409 on every try.
+  const switching = !!subscription?.isActive;
 
   const duration: PlanDuration = pickedDuration ?? currentPlan?.type ?? "weekly";
 
@@ -140,7 +144,7 @@ export function ChoosePlanView({ asTab = false }: { asTab?: boolean }) {
       // until the new one's first payment goes through.
       const result = await fetchy.post<{ link?: string }, { package_id: string; switch?: true }>(
         "/subscription/payhere-link",
-        currentPlan ? { package_id: plan.id, switch: true } : { package_id: plan.id }
+        switching ? { package_id: plan.id, switch: true } : { package_id: plan.id }
       );
 
       if (!result.link) throw new Error("No payment link in response");
@@ -202,20 +206,24 @@ export function ChoosePlanView({ asTab = false }: { asTab?: boolean }) {
     );
   }
 
-  const currentName = currentPlan ? stripFrequencySuffix(currentPlan.name) : undefined;
+  const currentName = currentPlan
+    ? stripFrequencySuffix(currentPlan.name)
+    : subscription?.isActive
+      ? stripFrequencySuffix(subscription.planName)
+      : undefined;
   const onCurrent = !!currentPlan && selectedPlan?.id === currentPlan.id;
   const ctaLabel = !selectedPlan
     ? "Select a plan"
     : onCurrent
       ? `You're on ${currentName}`
-      : `${currentPlan ? "Switch to" : "Activate"} ${stripFrequencySuffix(selectedPlan.name)} · ${fmtLkrCurrency(selectedPlan.amount)}/${perLabel(selectedPlan.type)}`;
+      : `${switching ? "Switch to" : "Activate"} ${stripFrequencySuffix(selectedPlan.name)} · ${fmtLkrCurrency(selectedPlan.amount)}/${perLabel(selectedPlan.type)}`;
 
   return (
     <div className="flex flex-col gap-5">
       {header}
 
       <PageTitle
-        title={currentPlan ? "Change your plan" : "Choose your plan"}
+        title={switching ? "Change your plan" : "Choose your plan"}
         subtitle="Activate your Bitcoin දීප membership today, grow with the community, cancel anytime."
       />
 
@@ -226,7 +234,7 @@ export function ChoosePlanView({ asTab = false }: { asTab?: boolean }) {
         onChange={handleDurationChange}
       />
 
-      {currentPlan && (
+      {switching && (
         <GateNotice
           className=""
           title={`You're on ${currentName}`}
@@ -273,7 +281,7 @@ export function ChoosePlanView({ asTab = false }: { asTab?: boolean }) {
         Paid securely through PayHere with your bank.
       </p>
 
-      {!currentPlan && !asTab && (
+      {!switching && !asTab && (
         <Link
           href="/dashboard"
           className="press text-link self-center rounded-xl px-2.5 py-2 text-[14px] font-bold"
@@ -288,7 +296,7 @@ export function ChoosePlanView({ asTab = false }: { asTab?: boolean }) {
       <div className={PLAN_CTA_BAR}>
         <Button
           className="animate-rise"
-          disabled={!selectedPlan || onCurrent || packagesLoading || offline}
+          disabled={!selectedPlan || onCurrent || packagesLoading || subscriptionLoading || offline}
           onClick={handleContinue}
         >
           <span className="truncate">{ctaLabel}</span>
@@ -300,7 +308,7 @@ export function ChoosePlanView({ asTab = false }: { asTab?: boolean }) {
         onOpenChange={(open) => {
           if (!payhereLinkLoading) setConfirmOpen(open);
         }}
-        title={currentPlan ? "Confirm switch" : "Confirm plan"}
+        title={switching ? "Confirm switch" : "Confirm plan"}
         hideClose={payhereLinkLoading}
         footer={
           <Button

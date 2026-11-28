@@ -11,14 +11,26 @@ import { celebrate } from "@/lib/celebrate";
 import { queryKeys } from "@/lib/query-keys";
 import { haptic } from "@/platform";
 
+/** When to refetch the plan after landing here, until the webhook has landed. */
+const PLAN_REFRESH_DELAYS_MS = [5_000, 10_000, 20_000, 30_000];
+
 function PlanPaymentSuccess() {
   const queryClient = useQueryClient();
   useEffect(() => {
     haptic.notify("success");
     void celebrate();
-    // A new plan, or a switch that just retired the old one: don't show the
-    // cached plan.
-    void queryClient.invalidateQueries({ queryKey: queryKeys.subscriptionCurrent });
+  }, []);
+
+  // A new plan, or a switch that retires the old one: don't show the cached
+  // plan. PayHere usually redirects here before its webhook reaches the
+  // backend, so one refetch would often cache the old plan as fresh for the
+  // default 60 s staleTime. Refetch now and a few times over the next ~30 s.
+  useEffect(() => {
+    const refresh = () =>
+      void queryClient.invalidateQueries({ queryKey: queryKeys.subscriptionCurrent });
+    refresh();
+    const timers = PLAN_REFRESH_DELAYS_MS.map((ms) => setTimeout(refresh, ms));
+    return () => timers.forEach(clearTimeout);
   }, [queryClient]);
 
   return (

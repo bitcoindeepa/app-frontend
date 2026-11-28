@@ -93,16 +93,13 @@ async function unlockSession(): Promise<PasskeyStatus> {
 export const useUnlockWithPasskey = () => usePasskeyMutation(unlockSession);
 
 /**
- * Ask (or not) for the passkey when the app opens. Turning it off needs this
- * session unlocked, so it unlocks first when it isn't.
+ * Ask (or not) for the passkey when the app opens. Turning it off always asks
+ * for the passkey first, even when this session is still unlocked (that lasts
+ * 12 h): switching off a lock needs the member, not just their open browser.
  */
 export function useSetLockOnOpen() {
-  const queryClient = useQueryClient();
   return usePasskeyMutation(async (lockOnOpen: boolean) => {
-    if (!lockOnOpen) {
-      const current = await queryClient.fetchQuery(passkeyStatusOptions());
-      if (!current.unlocked) await unlockSession();
-    }
+    if (!lockOnOpen) await unlockSession();
     return fetchy.patch<PasskeyStatus>("/passkey/settings", { lock_on_open: lockOnOpen });
   });
 }

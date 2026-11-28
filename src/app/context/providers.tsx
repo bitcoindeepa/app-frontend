@@ -12,6 +12,8 @@ import { SwipeClickGuard } from "@/components/swipe-click-guard";
 import { useBotWalletInit } from "@/hooks/useBotWalletInit";
 import { useToast } from "@/components/ui/toast";
 import { TELEGRAM_BOT_URL } from "@/lib/constants";
+import { onIdentityChange } from "@/lib/auth";
+import { AppLockBoundary } from "@/components/passkey/AppLockBoundary";
 import ThemeProvider from "./theme";
 
 // Registers/refreshes the Telegram user on launch (and after the session
@@ -61,8 +63,29 @@ let browserQueryClient: QueryClient | undefined;
 // in the browser (kept even if React throws away a suspended first render).
 function getQueryClient() {
   if (environmentManager.isServer()) return makeQueryClient();
-  browserQueryClient ??= makeQueryClient();
+  if (!browserQueryClient) {
+    const client = makeQueryClient();
+    browserQueryClient = client;
+    // Signed out (logout, a 401, an expired session) or signed in as someone
+    // else in this tab (e.g. passkey sign-in, no page load): drop everything
+    // cached for the previous account before the new session renders, so
+    // its profile, balances or bank accounts never show to the next one.
+    onIdentityChange(() => clearPrivateCache(client));
+  }
   return browserQueryClient;
+}
+
+function clearPrivateCache(client: QueryClient) {
+  // Stop in-flight requests first: a late answer for the previous account
+  // must not land in the fresh cache
+  void client.cancelQueries();
+  client.getQueryCache().clear();
+  // Finished mutations hold the previous account's inputs and answers. A
+  // running one (e.g. the Mini App signing in again) is left to finish.
+  const mutations = client.getMutationCache();
+  for (const m of mutations.getAll()) {
+    if (m.state.status !== "pending") mutations.remove(m);
+  }
 }
 
 export default function Providers({ children }: { children: React.ReactNode }) {
@@ -79,8 +102,12 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           <ToastProvider>
             <BotWalletOnLaunch />
             <OfflineBanner />
-            {children}
-            <ConfirmHost />
+            {/* Every route, not only /dashboard: verification and payment
+                pages show the member's data too */}
+            <AppLockBoundary>
+              {children}
+              <ConfirmHost />
+            </AppLockBoundary>
           </ToastProvider>
         </QueryClientProvider>
       </ThemeProvider>

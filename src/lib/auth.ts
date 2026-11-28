@@ -57,12 +57,42 @@ const SIGNED_OUT: SessionSnapshot = { status: "unauthenticated", kind: null, use
 
 let snapshot: SessionSnapshot = LOADING;
 let miniAppToken: string | null = null;
+/**
+ * The backend itself said this browser has no web session (GET /auth/me or
+ * another call answered 401, or logout was confirmed), as opposed to "still
+ * checking" or "couldn't reach it". Only then can a login that starts here
+ * be told apart from the session the browser already had (startWebLogin).
+ */
+let webSignedOutConfirmed = false;
 let webProbe: Promise<SessionSnapshot> | null = null;
 /** Numbers each probe: only the newest one may update the session */
 let webProbeSeq = 0;
 
+/** Who a snapshot is signed in as (null: nobody; undefined: still loading) */
+function identityOf(s: SessionSnapshot): string | null | undefined {
+  if (s.status === "loading") return undefined;
+  return s.status === "authenticated" && s.user ? `${s.kind}:${s.user.id}` : null;
+}
+
+const identityListeners = new Set<() => void>();
+
+/**
+ * Runs synchronously whenever the signed-in account changes (signed out,
+ * signed in, or another account), before anything renders with the new
+ * session: the query client drops the previous account's cached data here
+ * (providers.tsx), so it never reaches the next one.
+ */
+export function onIdentityChange(listener: () => void): () => void {
+  identityListeners.add(listener);
+  return () => identityListeners.delete(listener);
+}
+
 function emit(next: SessionSnapshot) {
+  const before = identityOf(snapshot);
+  const after = identityOf(next);
   snapshot = next;
+  // Loading → first answer isn't a change: nothing was cached for anyone yet
+  if (before !== undefined && before !== after) identityListeners.forEach((notify) => notify());
   if (typeof window !== "undefined") window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
 }
 
@@ -127,11 +157,13 @@ export function refreshWebSession({ fresh = false } = {}): Promise<SessionSnapsh
   const seq = ++webProbeSeq;
   const probe = (async (): Promise<SessionSnapshot> => {
     let next: SessionSnapshot = SIGNED_OUT;
+    let confirmed = false;
     try {
       const response = await fetch(`${API_BASE_URL}/auth/me`, {
         cache: "no-store",
         credentials: "include",
       });
+      confirmed = response.status === 401;
       if (response.ok) {
         const body = (await response.json()) as {
           user?: { telegram_id?: string; username?: string | null };
@@ -148,7 +180,10 @@ export function refreshWebSession({ fresh = false } = {}): Promise<SessionSnapsh
     } catch {
       // Network error: signed out, as before
     }
-    if (seq === webProbeSeq) emit(next);
+    if (seq === webProbeSeq) {
+      webSignedOutConfirmed = confirmed;
+      emit(next);
+    }
     return next;
   })();
   webProbe = probe;
@@ -219,6 +254,8 @@ export function clearSession(): void {
 export function onUnauthorized(sentToken: string | null): void {
   if (snapshot.status !== "authenticated") return;
   if (sentToken !== miniAppToken) return;
+  // The web cookie was refused: the backend says this browser is signed out
+  if (sentToken === null) webSignedOutConfirmed = true;
   clearSession();
 }
 
@@ -240,15 +277,21 @@ export async function logoutSession(all = false): Promise<void> {
   if (!response.ok && response.status !== 401) {
     throw new Error(`Logout failed (${response.status})`);
   }
+  if (!token) webSignedOutConfirmed = true;
   clearSession();
 }
 
 /**
  * Start "Log In with Telegram": a full-page redirect to Telegram and back.
- * The page it returns to doesn't ask for the passkey (lib/app-lock.ts).
+ * The page it returns to doesn't ask for the passkey (lib/app-lock.ts), but
+ * only when the backend had confirmed this browser was signed out: while
+ * GET /auth/me is still loading or failed, the browser may still hold a
+ * session, and a cancelled or failed login would then return to that old
+ * session unlocked. Those logins return to the lock instead, as before.
+ * ReloginPrompt (already signed in) also gets the lock, never the exemption.
  */
 export function startWebLogin(returnTo?: string, referralCode?: string): void {
-  markLoginStarted();
+  if (webSignedOutConfirmed && snapshot.status === "unauthenticated") markLoginStarted();
   window.location.assign(webLoginUrl(returnTo, referralCode));
 }
 

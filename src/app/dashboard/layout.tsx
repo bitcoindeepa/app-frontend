@@ -9,8 +9,6 @@ import { PullToRefresh } from "@/components/pull-to-refresh";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useSession } from "@/hooks/useSession";
-import { useAppLock } from "@/hooks/useAppLock";
-import { PasskeyLock } from "@/components/passkey/PasskeyLock";
 import WalletLoading from "./loading";
 import ActivityLoading from "./activity/loading";
 import NewsLoading from "./news/loading";
@@ -27,7 +25,6 @@ import { PLAN_ICONS } from "@/components/dashboard/wallet/PlanSummaryCard";
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { sessionExpired, signingIn } = useAuthGuard();
   const { status } = useSession();
-  const appLocked = useAppLock();
   const pathname = usePathname();
 
   // Warm the shared query cache as soon as any dashboard page mounts, not
@@ -83,12 +80,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     // Phone-width column, centered on a plain page on wider screens.
     <SheetsProvider>
-      {appLocked && <PasskeyLock />}
-      <div
-        inert={appLocked}
-        aria-hidden={appLocked || undefined}
-        className="bg-background min-h-app relative mx-auto flex w-full max-w-[440px] flex-col overflow-x-clip px-4 transition-colors duration-300"
-      >
+      {/* The passkey lock (AppLockBoundary) wraps every route in the root providers */}
+      <div className="bg-background min-h-app relative mx-auto flex w-full max-w-[440px] flex-col overflow-x-clip px-4 transition-colors duration-300">
         <AppHeader />
         <main
           className={

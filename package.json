@@ -1,6 +1,6 @@
 {
   "name": "BitcoinDeepa TMA",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "private": true,
   "description": "A Telegram Mini App built with Next.js 14 that supports Bitcoin membership reward accrual with subscription management for Sri Lankan users.",
   "main": "index.js",
@@ -24,6 +24,7 @@
     "@base-ui/react": "^1.9.0",
     "@dicebear/core": "10.7.0",
     "@dicebear/styles": "10.6.0",
+    "@neslinesli93/qpdf-wasm": "0.3.0",
     "@simplewebauthn/browser": "^14.0.0",
     "@tanstack/react-query": "^5.107.1",
     "@tma.js/sdk": "^3.3.0",

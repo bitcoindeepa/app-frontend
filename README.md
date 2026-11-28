@@ -1,4 +1,13 @@
 <!-- markdownlint-disable-next-line MD041 -->
+<p>
+<a href="https://github.com/bitcoindeepa/app-frontend/actions/workflows/tests.yml?query=branch%3Amain"><img
+  alt="Tests"
+  src="https://img.shields.io/github/actions/workflow/status/bitcoindeepa/app-frontend/tests.yml?branch=main&label=tests"></a>
+<a href="https://github.com/bitcoindeepa/app-frontend/actions/workflows/tests.yml?query=branch%3Amain"><img
+  alt="Test coverage"
+  src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fbitcoindeepa%2Fapp-frontend%2Fbadges%2Fcoverage.json"></a>
+</p>
+
 <br>
 
 <a href="https://app.bitcoindeepa.com"><picture><source media="(prefers-color-scheme: dark)"

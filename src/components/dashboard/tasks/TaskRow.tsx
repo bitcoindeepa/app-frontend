@@ -3,7 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Emoji } from "@/components/ui/emoji";
-import { fmtSats } from "@/lib/formatters";
+import { fmtSatsUnit } from "@/lib/formatters";
 import type { Task } from "@/lib/types";
 
 export interface TaskRowProps {
@@ -21,7 +21,7 @@ export function TaskRow({ task, onStart }: TaskRowProps) {
         <p className="text-ink3 text-[12px] leading-4">{task.description}</p>
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1.5">
-        <Badge className="h-[22px]">{fmtSats(task.rewardSats)} sats</Badge>
+        <Badge className="h-[22px]">{fmtSatsUnit(task.rewardSats)}</Badge>
         {onStart ? (
           <Button
             variant="secondary"

@@ -7,18 +7,44 @@ Releasing: bump `version` in `package.json` and add a matching `## [x.y.z] - YYY
 PR to `main`. When it merges, the Release workflow tags `vx.y.z` and publishes a GitHub release with that section as
 its notes. Keep unreleased work under `## [Unreleased]
 
-## [Unreleased]
+## [2.3.0] - 2026-11-28
+
+Needs app-backend v2.2.0 (plan switch, and the LKR value of P2P sends). Deploy the backend first.
+
+### Added
+
+- Bank statement PDFs with a password are unlocked on the device: the Add bank account sheet asks for the password,
+  removes it with qpdf (WebAssembly, loaded only for locked PDFs) and uploads only the unlocked copy. The password
+  never leaves the device, and a locked PDF is never uploaded (#151).
+- `NEXT_PUBLIC_TELEGRAM_MINI_APP_DEEP_LINK` and `NEXT_PUBLIC_TELEGRAM_MINI_APP_URL` override the Mini App links
+  ("Prefer Telegram?" and the error page). Unset keeps the named Mini App (#144).
+- Tests: Vitest with MSW and Testing Library, covering `src/lib`, the platform layer, the session, app lock, passkey,
+  send and sell hooks, and the main screens. CI runs them on every PR (#145, #146, #148, #149, #150).
+
+### Changed
+
+- **Change plan without cancelling first.** "Change plan" now opens the plan picker. The member picks a new plan and
+  pays for it in one checkout (`switch: true`); the old plan keeps running until that first payment goes through, so
+  an abandoned checkout no longer leaves them without a plan. A cancelled checkout says nothing changed (#153).
+- LKR preset chips in the Calculator and Buy sheets show whole rupees (`රු. 25,000`), not `.00` (#143).
+
+### Fixed
+
+- The Sent screen showed Value ≈ රු. 0.00 for every send. It now shows the value at the rate the Review screen quoted
+  (`value_lkr` from the backend), and hides the row when there is none (#152).
+- "1 sat", not "1 sats", wherever an amount is shown (#152).
 
 ### Security
 
 - A cancelled or failed "Log In with Telegram" no longer opens the app without the passkey lock. The lock is skipped
-  after a login only when the backend had confirmed the browser was signed out.
+  after a login only when the backend had confirmed the browser was signed out (#147).
 - The passkey lock covers every signed-in page, including `/verification` (KYC details), `/plans` and `/payment`,
   not only the dashboard. Pages opened with Back/Forward and sheets or dialogs that appear while it's locked can't be
-  used behind it.
-- Turning off "Ask when opening the app" always asks for the passkey, even when the session is already unlocked.
+  used behind it (#147).
+- Turning off "Ask when opening the app" always asks for the passkey, even when the session is already unlocked
+  (#147).
 - Signing out, an expired session or signing in as another account in the same tab (passkey sign-in) clears all
-  cached account data first, so one account's details never show to the next.
+  cached account data first, so one account's details never show to the next (#147).
 
 ## [2.2.0] - 2026-11-26
 

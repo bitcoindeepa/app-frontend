@@ -12,7 +12,7 @@ import { isBuyOrderId, isUnpaidAndExpired, useBuyOrder, type BuyOrder } from "@/
 import { FetchyError } from "@/lib/fetchy";
 import { useSession } from "@/hooks/useSession";
 import { celebrate } from "@/lib/celebrate";
-import { fmtActivityDateTime, fmtLkrExact, fmtSats } from "@/lib/formatters";
+import { fmtActivityDateTime, fmtLkrExact, fmtSatsUnit } from "@/lib/formatters";
 import { queryKeys } from "@/lib/query-keys";
 
 function stateOf(order: BuyOrder | undefined, cancelled: boolean) {
@@ -58,13 +58,13 @@ function stateOf(order: BuyOrder | undefined, cancelled: boolean) {
       return order.settled
         ? {
             title: "Bitcoin received",
-            text: `${fmtSats(order.satoshis ?? 0)} sats were added to your wallet.`,
+            text: `${fmtSatsUnit(order.satoshis ?? 0)} ${(order.satoshis ?? 0) === 1 ? "was" : "were"} added to your wallet.`,
             emoji: "/emoji/animated/party-popper.webp",
           }
         : {
             title: "Payment received",
             text: order.satoshis
-              ? `Sending ${fmtSats(order.satoshis)} sats to your wallet…`
+              ? `Sending ${fmtSatsUnit(order.satoshis)} to your wallet…`
               : "Sending your sats to your wallet…",
             spinner: true,
           };
@@ -204,7 +204,7 @@ export function BuyOrderStatus({
     ? [
         { k: paid ? "Amount paid" : "Amount", v: fmtLkrExact(order.amount_lkr) },
         ...(order.satoshis
-          ? [{ k: done ? "Sats added" : "Sats", v: `${fmtSats(order.satoshis)} sats` }]
+          ? [{ k: done ? "Sats added" : "Sats", v: fmtSatsUnit(order.satoshis) }]
           : []),
         { k: paid ? "Paid with" : "Pay with", v: "PayHere" },
         { k: "Date", v: fmtActivityDateTime(order.created_at) },
@@ -220,7 +220,7 @@ export function BuyOrderStatus({
         {doneOrder ? (
           <ResultHero
             visual="party"
-            big={`+${fmtSats(doneOrder.satoshis ?? 0)} sats`}
+            big={`+${fmtSatsUnit(doneOrder.satoshis ?? 0)}`}
             text={`Bought for ${fmtLkrExact(doneOrder.amount_lkr)} and added to your wallet`}
           />
         ) : state.spinner ? (

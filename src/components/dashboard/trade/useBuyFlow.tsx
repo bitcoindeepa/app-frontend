@@ -7,7 +7,7 @@ import { KeyValueList } from "@/components/ui/section";
 import { useBuyPrice, useCreateBuyLink } from "@/hooks/query/useBuy";
 import { estimateBuy } from "@/lib/buy";
 import { FetchyError } from "@/lib/fetchy";
-import { fmtLkrCurrency, fmtLkrExact, fmtLkrPreset, fmtSats } from "@/lib/formatters";
+import { fmtLkrCurrency, fmtLkrExact, fmtLkrPreset, fmtSatsUnit } from "@/lib/formatters";
 import { usePayHereRedirect } from "@/lib/hooks";
 import { buyAmountSchema } from "@/lib/validations";
 import { haptic } from "@/platform";
@@ -227,7 +227,7 @@ export function useBuyFlow({ kyc, close, open }: FlowArgs): FlowView {
         <>
           <ReviewHeader
             caption="You get"
-            big={`≈ ${fmtSats(estimate.sats)} sats`}
+            big={`≈ ${fmtSatsUnit(estimate.sats)}`}
             small={`for ${fmtLkrCurrency(lkr)}`}
           />
           <WarningRow title="This is an estimate">

@@ -10,13 +10,13 @@ import { Sheet } from "@/components/ui/sheet";
 import { haptic } from "@/platform";
 import { ACTIVITY_ICON, ACTIVITY_TITLE, type ActivityEntry } from "@/lib/activity";
 import {
+  LKR_SYMBOL,
   fmtActivityTime,
   fmtLkrCurrency,
   fmtLkrExact,
   fmtPriceCompact,
-  fmtSats,
+  fmtSatsUnit,
   formatSatoshis,
-  LKR_SYMBOL,
   maskDigits,
 } from "@/lib/formatters";
 
@@ -150,7 +150,7 @@ function Amount({ item, mask, big }: { item: ActivityEntry; mask: Mask; big?: bo
     // Never credited: no sign, struck through, so it can't pass for a reward
     return (
       <span className={cn("num text-ink3 font-bold whitespace-nowrap line-through", size)}>
-        {mask(`${fmtSats(Math.abs(item.sats))} sats`)}
+        {mask(fmtSatsUnit(Math.abs(item.sats)))}
       </span>
     );
   }
@@ -170,7 +170,7 @@ function Amount({ item, mask, big }: { item: ActivityEntry; mask: Mask; big?: bo
         isOutgoing ? "text-loss" : "text-gain"
       )}
     >
-      {mask(`${isOutgoing ? "−" : "+"}${fmtSats(Math.abs(item.sats))} sats`)}
+      {mask(`${isOutgoing ? "−" : "+"}${fmtSatsUnit(Math.abs(item.sats))}`)}
     </span>
   );
 }
@@ -207,7 +207,7 @@ function ActivitySheet({
       v: settlement.feeLkr > 0 ? mask(fmtLkrExact(settlement.feeLkr)) : "No fee",
     });
   } else if (settlement.feeSats !== undefined) {
-    rows.push({ k: "Network fee", v: mask(`${fmtSats(settlement.feeSats)} sats`) });
+    rows.push({ k: "Network fee", v: mask(fmtSatsUnit(settlement.feeSats)) });
   }
   if (settlement.btcPriceLkr !== undefined && settlement.btcPriceLkr > 0) {
     rows.push({

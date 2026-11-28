@@ -1,6 +1,6 @@
 {
   "name": "BitcoinDeepa TMA",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "private": true,
   "description": "A Telegram Mini App built with Next.js 14 that supports Bitcoin membership reward accrual with subscription management for Sri Lankan users.",
   "main": "index.js",
@@ -14,6 +14,9 @@
     "stamp-sw": "node scripts/stamp-sw.mjs",
     "start": "next start -p 3347",
     "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "format": "prettier --write .",
     "init-git-hooks": "git config core.hooksPath .githooks"
   },
@@ -42,17 +45,24 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.5",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.13",
     "@types/canvas-confetti": "1.9.0",
     "@types/node": "^20.14.15",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/sanitize-html": "^2.16.1",
+    "@vitest/coverage-v8": "^5.1.2",
     "eslint": "9.39.4",
     "eslint-config-next": "^16.2.9",
+    "jsdom": "^31.0.1",
+    "msw": "^3.0.7",
     "postcss": "^8.4.41",
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "tailwindcss": "^4.3.5",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^5.1.2"
   }
 }

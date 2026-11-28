@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,6 @@ import { WebBackButton } from "@/components/ui/back-button";
 import { ChoosePlanSkeleton } from "@/components/skeletons/choose-plan";
 import { KycRequiredNotice } from "@/components/dashboard/plans/KycRequiredNotice";
 import { PLAN_CTA_BAR } from "@/components/dashboard/plans/plan-cta-bar";
-import { useCancelPlan } from "@/components/dashboard/plans/useCancelPlan";
 import { GateNotice } from "@/components/dashboard/trade/DualAmount";
 import {
   getPlanIconSrc,
@@ -25,8 +25,9 @@ import {
 import fetchy, { FetchyError } from "@/lib/fetchy";
 import { usePayHereRedirect } from "@/lib/hooks";
 import { estimateBuy } from "@/lib/buy";
-import { fmtLkrCurrency, fmtSats } from "@/lib/formatters";
+import { fmtLkrCurrency, fmtSatsUnit } from "@/lib/formatters";
 import { usePackages } from "@/hooks/query/usePackages";
+import { queryKeys } from "@/lib/query-keys";
 import { useBuyPrice } from "@/hooks/query/useBuy";
 import { useUser } from "@/hooks/useUser";
 import { useOffline } from "@/hooks/useOffline";
@@ -50,13 +51,17 @@ const perLabel = (type: PlanDuration) => (type === "weekly" ? "week" : "month");
  * The plan picker. Rendered inside the dashboard layout, so the tab bar stays
  * visible: either directly as the Plans tab when the user has no plan
  * (`asTab`), or as the pushed /dashboard/plans/choose page (change plan).
+ *
+ * Changing plan is one checkout: the member picks the new plan and pays for
+ * it (`switch: true`), and the backend retires the old plan only once that
+ * first payment goes through. Abandoning the checkout leaves the old plan.
  */
 export function ChoosePlanView({ asTab = false }: { asTab?: boolean }) {
   const { data: kyc, isLoading: kycLoading } = useKycStatus();
   const router = useRouter();
   const redirectToPayHereViaPage = usePayHereRedirect();
   const { status: sessionStatus } = useSession();
-  const { subscription } = useUser();
+  const { subscription, subscriptionLoading } = useUser();
   const offline = useOffline();
 
   // null = not picked yet: follow the current plan's frequency (weekly otherwise).
@@ -65,7 +70,7 @@ export function ChoosePlanView({ asTab = false }: { asTab?: boolean }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [payhereLinkLoading, setPayhereLinkLoading] = useState(false);
   const toast = useToast();
-  const { cancel, cancelling } = useCancelPlan();
+  const queryClient = useQueryClient();
 
   const { data: fetchedPackages, isLoading: packagesLoading } = usePackages();
   const packages = fetchedPackages ?? EMPTY_PLANS;
@@ -88,6 +93,10 @@ export function ChoosePlanView({ asTab = false }: { asTab?: boolean }) {
       subscription?.isActive ? packages.find((p) => p.id === subscription.packageId) : undefined,
     [packages, subscription]
   );
+  // Whether this checkout is a switch: any active plan, even one whose package
+  // isn't in the catalog. Keyed on the catalog match, a member whose package is
+  // missing would be sent without `switch` and get 409 on every try.
+  const switching = !!subscription?.isActive;
 
   const duration: PlanDuration = pickedDuration ?? currentPlan?.type ?? "weekly";
 
@@ -109,7 +118,7 @@ export function ChoosePlanView({ asTab = false }: { asTab?: boolean }) {
       price.bitcoindeepaFeeBasisPoints,
       price.btcLkrPrice
     );
-    return `≈ ${fmtSats(sats)} sats every ${perLabel(plan.type)} at today’s rate`;
+    return `≈ ${fmtSatsUnit(sats)} every ${perLabel(plan.type)} at today’s rate`;
   };
 
   const handleDurationChange = (d: PlanDuration) => {
@@ -118,7 +127,7 @@ export function ChoosePlanView({ asTab = false }: { asTab?: boolean }) {
   };
 
   const handleContinue = () => {
-    if (!selectedPlan || currentPlan) return;
+    if (!selectedPlan || selectedPlan.id === currentPlan?.id) return;
     haptic.impact("light");
     setConfirmOpen(true);
   };
@@ -131,9 +140,11 @@ export function ChoosePlanView({ asTab = false }: { asTab?: boolean }) {
 
     try {
       setPayhereLinkLoading(true);
-      const result = await fetchy.post<{ link?: string }, { package_id: string }>(
+      // With an active plan this is a switch: the backend keeps the old plan
+      // until the new one's first payment goes through.
+      const result = await fetchy.post<{ link?: string }, { package_id: string; switch?: true }>(
         "/subscription/payhere-link",
-        { package_id: plan.id }
+        switching ? { package_id: plan.id, switch: true } : { package_id: plan.id }
       );
 
       if (!result.link) throw new Error("No payment link in response");
@@ -143,6 +154,18 @@ export function ChoosePlanView({ asTab = false }: { asTab?: boolean }) {
       // Backend's KycVerifiedGuard rejects with 403 until KYC is approved.
       if (err instanceof FetchyError && err.status === 403) {
         router.push("/verification");
+        return;
+      }
+      // 409: their plan changed meanwhile (another device, or it ended).
+      if (err instanceof FetchyError && err.status === 409) {
+        haptic.notify("error");
+        setConfirmOpen(false);
+        void queryClient.invalidateQueries({ queryKey: queryKeys.subscriptionCurrent });
+        toast({
+          type: "error",
+          title: "Your plan changed",
+          description: "We've refreshed it. Check your plan and try again.",
+        });
         return;
       }
       // Also covers "online but unreachable", which the offline check can't see.
@@ -183,20 +206,24 @@ export function ChoosePlanView({ asTab = false }: { asTab?: boolean }) {
     );
   }
 
-  const currentName = currentPlan ? stripFrequencySuffix(currentPlan.name) : undefined;
-  // One plan at a time: with an active plan, nothing here can be bought.
-  const ctaLabel = currentPlan
-    ? `Cancel ${currentName} to switch`
-    : !selectedPlan
-      ? "Select a plan"
-      : `Activate ${stripFrequencySuffix(selectedPlan.name)} · ${fmtLkrCurrency(selectedPlan.amount)}/${perLabel(selectedPlan.type)}`;
+  const currentName = currentPlan
+    ? stripFrequencySuffix(currentPlan.name)
+    : subscription?.isActive
+      ? stripFrequencySuffix(subscription.planName)
+      : undefined;
+  const onCurrent = !!currentPlan && selectedPlan?.id === currentPlan.id;
+  const ctaLabel = !selectedPlan
+    ? "Select a plan"
+    : onCurrent
+      ? `You're on ${currentName}`
+      : `${switching ? "Switch to" : "Activate"} ${stripFrequencySuffix(selectedPlan.name)} · ${fmtLkrCurrency(selectedPlan.amount)}/${perLabel(selectedPlan.type)}`;
 
   return (
     <div className="flex flex-col gap-5">
       {header}
 
       <PageTitle
-        title={currentPlan ? "Change your plan" : "Choose your plan"}
+        title={switching ? "Change your plan" : "Choose your plan"}
         subtitle="Activate your Bitcoin දීප membership today, grow with the community, cancel anytime."
       />
 
@@ -207,17 +234,11 @@ export function ChoosePlanView({ asTab = false }: { asTab?: boolean }) {
         onChange={handleDurationChange}
       />
 
-      {currentPlan && (
+      {switching && (
         <GateNotice
           className=""
           title={`You're on ${currentName}`}
-          text="You can have one plan at a time. Cancel it first, then pick a new one."
-          action={{
-            label: "Cancel plan",
-            loading: cancelling,
-            disabled: offline,
-            onClick: () => void cancel(currentName, "switch"),
-          }}
+          text={`Pick a new plan and pay for it. ${currentName} stops once that first payment goes through, and your sats stay in your wallet.`}
         />
       )}
 
@@ -260,7 +281,7 @@ export function ChoosePlanView({ asTab = false }: { asTab?: boolean }) {
         Paid securely through PayHere with your bank.
       </p>
 
-      {!currentPlan && !asTab && (
+      {!switching && !asTab && (
         <Link
           href="/dashboard"
           className="press text-link self-center rounded-xl px-2.5 py-2 text-[14px] font-bold"
@@ -275,7 +296,7 @@ export function ChoosePlanView({ asTab = false }: { asTab?: boolean }) {
       <div className={PLAN_CTA_BAR}>
         <Button
           className="animate-rise"
-          disabled={!!currentPlan || !selectedPlan || packagesLoading || offline}
+          disabled={!selectedPlan || onCurrent || packagesLoading || subscriptionLoading || offline}
           onClick={handleContinue}
         >
           <span className="truncate">{ctaLabel}</span>
@@ -287,7 +308,7 @@ export function ChoosePlanView({ asTab = false }: { asTab?: boolean }) {
         onOpenChange={(open) => {
           if (!payhereLinkLoading) setConfirmOpen(open);
         }}
-        title="Confirm plan"
+        title={switching ? "Confirm switch" : "Confirm plan"}
         hideClose={payhereLinkLoading}
         footer={
           <Button
@@ -317,6 +338,7 @@ export function ChoosePlanView({ asTab = false }: { asTab?: boolean }) {
                 { k: "Pays with", v: "PayHere · bank" },
                 { k: "Billed", v: selectedPlan.type === "weekly" ? "Every week" : "Every month" },
                 ...(feeText ? [{ k: "Fee", v: `${feeText} of each payment` }] : []),
+                ...(currentName ? [{ k: "Replaces", v: `${currentName}, once you've paid` }] : []),
                 { k: "Cancel", v: "Any time, in Plans" },
               ]}
             />

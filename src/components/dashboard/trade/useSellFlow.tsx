@@ -23,7 +23,7 @@ import {
 import { useWalletMetrics } from "@/hooks/query/useWalletMetrics";
 import { useP2pMe } from "@/hooks/query/useP2p";
 import { FetchyError } from "@/lib/fetchy";
-import { fmtLkrCurrency, fmtLkrExact, fmtSats } from "@/lib/formatters";
+import { fmtLkrCurrency, fmtLkrExact, fmtSatsUnit } from "@/lib/formatters";
 import { estimateSellLkr, satsForLkr } from "@/lib/sell";
 import { sellAmountSchema } from "@/lib/validations";
 import { haptic } from "@/platform";
@@ -312,7 +312,7 @@ export function useSellFlow({ kyc, close, open }: FlowArgs): FlowView {
         <ReviewHeader
           caption="You receive"
           big={fmtLkrExact(quote.amountLkr)}
-          small={`for ${fmtSats(quote.sats)} sats`}
+          small={`for ${fmtSatsUnit(quote.sats)}`}
         />
         <LockRow
           secondsLeft={secondsLeft}
@@ -324,7 +324,7 @@ export function useSellFlow({ kyc, close, open }: FlowArgs): FlowView {
         {quoteM.error instanceof Error && <ErrorRow>{quoteM.error.message}</ErrorRow>}
         <KeyValueList
           rows={[
-            { k: "You sell", v: `${fmtSats(quote.sats)} sats` },
+            { k: "You sell", v: fmtSatsUnit(quote.sats) },
             { k: "Value", v: fmtLkrExact(quote.grossLkr) },
             {
               k: `Fee (${fmtFeePercent(quote.feeBasisPoints)})`,

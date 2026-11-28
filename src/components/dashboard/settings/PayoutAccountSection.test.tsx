@@ -328,7 +328,8 @@ describe("PayoutAccountSection", () => {
     it("shows the picked statement's name and size, and lets it be changed", async () => {
       const { user } = await open();
       await fillIn(user, { file: statement("image/png", 3 * 1024 * 1024, "passbook.png") });
-      expect(screen.getByText("passbook.png")).toBeTruthy();
+      // shown once the sheet has checked it isn't a password-locked PDF
+      expect(await screen.findByText("passbook.png")).toBeTruthy();
       expect(screen.getByText("3.0 MB")).toBeTruthy();
       expect(screen.getByRole("button", { name: "Change" })).toBeTruthy();
     });

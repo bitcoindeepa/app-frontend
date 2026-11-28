@@ -454,8 +454,10 @@ describe("web login", () => {
     );
   });
 
-  it("marks the login as started, then leaves for Telegram", async () => {
+  it("marks the login as started once the backend said this browser is signed out, then leaves for Telegram", async () => {
     const auth = await loadAuth();
+    fetchMock.mockResolvedValue(json(401, { message: "Unauthorized" }));
+    await auth.refreshWebSession();
     const assign = vi.fn();
     vi.stubGlobal("location", { assign });
     auth.startWebLogin("/dashboard");
@@ -464,6 +466,28 @@ describe("web login", () => {
       `${API}/auth/telegram/start?return_to=%2Fdashboard`
     );
   });
+
+  it.each([
+    ["while /auth/me hasn't answered", async () => {}],
+    [
+      "after /auth/me failed to answer",
+      async (auth: Awaited<ReturnType<typeof loadAuth>>) => {
+        fetchMock.mockRejectedValue(new TypeError("Failed to fetch"));
+        await auth.refreshWebSession();
+      },
+    ],
+  ])(
+    "doesn't mark the login %s (a cancelled login could return to a live session)",
+    async (_when, before) => {
+      const auth = await loadAuth();
+      await before(auth);
+      const assign = vi.fn();
+      vi.stubGlobal("location", { assign });
+      auth.startWebLogin("/dashboard");
+      expect(sessionStorage.getItem("bitcoin-deepa-login-started")).toBeNull();
+      expect(assign).toHaveBeenCalledOnce();
+    }
+  );
 
   it.each([
     [null, null],

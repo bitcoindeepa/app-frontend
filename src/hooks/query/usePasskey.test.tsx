@@ -320,14 +320,26 @@ describe("useSetLockOnOpen", () => {
     expect(readPasskeyHint()).toBe(true);
   });
 
-  it("turns it off straight away when this session is already unlocked", async () => {
+  it("asks for the passkey to turn it off even when this session is already unlocked", async () => {
+    // An unlocked session isn't enough: whoever has the open device would
+    // otherwise remove the prompt without proving who they are
+    const order: string[] = [];
     backend("GET", "/passkey", passkey({ unlocked: true }));
-    const settings = backend("PATCH", "/passkey/settings", passkey({ lock_on_open: false }));
+    backend("POST", "/passkey/unlock/options", { challenge: "unlock" });
+    backend("POST", "/passkey/unlock", () => {
+      order.push("unlock");
+      return passkey({ unlocked: true });
+    });
+    const settings = backend("PATCH", "/passkey/settings", () => {
+      order.push("settings");
+      return passkey({ unlocked: true, lock_on_open: false });
+    });
     const { result } = renderHookWithClient(() => useSetLockOnOpen());
 
     await act(() => result.current.mutateAsync(false));
 
-    expect(authenticate).not.toHaveBeenCalled();
+    expect(authenticate).toHaveBeenCalledTimes(1);
+    expect(order).toEqual(["unlock", "settings"]);
     expect(settings[0].body).toEqual({ lock_on_open: false });
     expect(readPasskeyHint()).toBe(false);
   });

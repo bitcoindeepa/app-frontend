@@ -10,6 +10,7 @@ import { miniAppLogin, signInMiniApp, signInWeb, signOut } from "@/test/session"
 import { onUnauthorized } from "@/lib/auth";
 import { lockApp, unlockApp } from "@/lib/app-lock";
 import { useRegisterUser } from "@/hooks/useRegisterUser";
+import { AppLockBoundary } from "@/components/passkey/AppLockBoundary";
 import DashboardLayout from "@/app/dashboard/layout";
 
 const nav = vi.hoisted(() => ({
@@ -45,14 +46,18 @@ function Launch() {
   return null;
 }
 
+/** As in the real app: the launch sign-in and the passkey lock (both in the
+ * root providers) around the layout */
 function open(pathname = "/dashboard") {
   nav.pathname = pathname;
   return renderScreen(
     <>
       <Launch />
-      <DashboardLayout>
-        <p>the page</p>
-      </DashboardLayout>
+      <AppLockBoundary>
+        <DashboardLayout>
+          <p>the page</p>
+        </DashboardLayout>
+      </AppLockBoundary>
     </>
   );
 }

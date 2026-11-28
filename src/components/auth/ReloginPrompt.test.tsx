@@ -31,8 +31,9 @@ describe("ReloginPrompt", () => {
       expect(assign).toHaveBeenCalledExactlyOnceWith(
         "https://api.test/auth/telegram/start?return_to=%2Fdashboard%2Fsell%2Ford_1%3Ffrom%3Dactivity"
       );
-      // the page the login returns to won't ask for the passkey
-      expect(sessionStorage.getItem("bitcoin-deepa-login-started")).not.toBeNull();
+      // the member is signed in here, so the login may come back to this same
+      // session: it must not skip the passkey lock on return
+      expect(sessionStorage.getItem("bitcoin-deepa-login-started")).toBeNull();
     });
 
     it("names what the member was doing", async () => {

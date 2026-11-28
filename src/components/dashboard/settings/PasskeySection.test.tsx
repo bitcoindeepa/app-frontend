@@ -193,7 +193,9 @@ describe("PasskeySection", () => {
       expect(lockSwitch().getAttribute("aria-checked")).toBe("false");
     });
 
-    it("turns off, and says sending and selling still ask", async () => {
+    it("turns off after the passkey, and says sending and selling still ask", async () => {
+      backend("POST", "/passkey/unlock/options", { challenge: "unlock" });
+      backend("POST", "/passkey/unlock", passkeyStatus({ unlocked: true }));
       const settings = backend(
         "PATCH",
         "/passkey/settings",
@@ -207,8 +209,8 @@ describe("PasskeySection", () => {
       expect(screen.getByText("Sending and selling still need your passkey.")).toBeTruthy();
       expect(settings[0].body).toEqual({ lock_on_open: false });
       expect(lockSwitch().getAttribute("aria-checked")).toBe("false");
-      // unlocked already, so no prompt was needed
-      expect(authenticate).not.toHaveBeenCalled();
+      // asked even though this session was already unlocked
+      expect(authenticate).toHaveBeenCalledTimes(1);
     });
 
     it("asks for the passkey first when this session is locked", async () => {

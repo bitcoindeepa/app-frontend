@@ -14,7 +14,11 @@ import { useTransactionHistory } from "@/hooks/query/useTransactionHistory";
 export function useWalletMetrics({
   withTransactions = false,
 }: { withTransactions?: boolean } = {}) {
-  const { data: summary, isLoading: isSummaryLoading } = useWalletSummary();
+  const {
+    data: summary,
+    isLoading: isSummaryLoading,
+    isError: isSummaryError,
+  } = useWalletSummary();
   const needsPriceFallback = !!summary && summary.current_btc_price?.lkr == null;
   const loadTransactions = withTransactions || needsPriceFallback;
   const { transactions, isLoading: isTransactionsLoading } = useTransactionHistory({
@@ -29,8 +33,10 @@ export function useWalletMetrics({
       )
     : 0;
   const totalSats = summary?.total_balance ?? 0;
-  // total_* are placeholder zeros when the wallet balance couldn't be fetched
-  const balanceAvailable = summary?.balance_available !== false;
+  // total_* are placeholder zeros when the wallet balance couldn't be fetched,
+  // and there is no summary at all when the request itself failed: neither is
+  // a real zero balance
+  const balanceAvailable = summary ? summary.balance_available !== false : !isSummaryError;
   // Savings pots stay in the wallet (total_balance) but can't be sold or sent.
   // An older backend has no pot fields: then everything is spendable.
   const potSats = summary?.pot_balance ?? 0;
